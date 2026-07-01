@@ -177,4 +177,5 @@ def build_edit_profile_conversation() -> ConversationHandler:
         fallbacks=[],
         name="edit_profile",
         persistent=False,
+        per_message=False,
     )

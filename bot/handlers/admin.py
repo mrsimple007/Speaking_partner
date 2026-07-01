@@ -1,6 +1,5 @@
 """
 Admin commands — only work for telegram IDs listed in ADMIN_TELEGRAM_IDS.
-
 /admin                 — show stats dashboard
 /admin ban <id>        — ban a user by their Telegram ID
 /admin unban <id>      — lift a ban
@@ -8,7 +7,6 @@ Admin commands — only work for telegram IDs listed in ADMIN_TELEGRAM_IDS.
 """
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
-
 from bot import db, config
 from bot.queue_manager import engine
 
@@ -24,7 +22,6 @@ def _require_admin(func):
 @_require_admin
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     args = context.args or []
-
     if not args:
         # Show stats
         stats = db.get_admin_stats()
@@ -58,8 +55,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     elif subcmd == "payments":
         # List last 10 pending manual payments
         rows = (
-            db.supabase.table("payments")
-            .select("id, user_id, amount, currency, created_at, users(telegram_id)")
+            db.supabase.table("lingo_payments")
+            .select("id, user_id, amount, currency, created_at, lingo_users(telegram_id)")
             .eq("status", "pending")
             .eq("method", "manual_transfer")
             .order("created_at", desc=True)
@@ -72,7 +69,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             return
         lines = ["💳 *Pending manual payments*"]
         for r in rows:
-            tg_id = r.get("users", {}).get("telegram_id", "?")
+            tg_id = r.get("lingo_users", {}).get("telegram_id", "?")
             lines.append(
                 f"ID {r['id']} | User {tg_id} | {r['amount']} {r['currency']} | {r['created_at'][:10]}"
             )
@@ -82,7 +79,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         # /admin broadcast Your message here
         msg = " ".join(args[1:])
         users = (
-            db.supabase.table("users")
+            db.supabase.table("lingo_users")
             .select("telegram_id")
             .neq("banned", True)
             .execute()

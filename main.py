@@ -1,5 +1,5 @@
 """
-LangBridge Bot — entrypoint.
+LingoMatch Bot — entrypoint.
 
 Handler priority (python-telegram-bot processes in registration order):
   1. Onboarding ConversationHandler   ← catches /start + onboarding callbacks
@@ -82,7 +82,7 @@ def main() -> None:
         first=WAITING_QUEUE_POLL_SECONDS,
     )
 
-    logger.info("LangBridge bot starting — long polling...")
+    logger.info("LingoMatch bot starting — long polling...")
     app.run_polling(drop_pending_updates=True)
 
 

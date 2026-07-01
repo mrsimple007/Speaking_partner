@@ -19,7 +19,7 @@ supabase: Client = create_client(config.SUPABASE_URL, config.SUPABASE_SERVICE_KE
 # ---------------------------------------------------------------
 def get_user_by_telegram_id(telegram_id: int) -> Optional[dict]:
     res = (
-        supabase.table("users")
+        supabase.table("lingo_users")
         .select("*")
         .eq("telegram_id", telegram_id)
         .limit(1)
@@ -30,7 +30,7 @@ def get_user_by_telegram_id(telegram_id: int) -> Optional[dict]:
 
 def create_user(telegram_id: int, ui_language: str = "en") -> dict:
     res = (
-        supabase.table("users")
+        supabase.table("lingo_users")
         .insert({"telegram_id": telegram_id, "ui_language": ui_language, "native_language": ""})
         .execute()
     )
@@ -47,7 +47,7 @@ def get_or_create_user(telegram_id: int, ui_language: str = "en") -> dict:
 def update_user(telegram_id: int, fields: dict) -> dict:
     fields["last_active"] = datetime.now(timezone.utc).isoformat()
     res = (
-        supabase.table("users")
+        supabase.table("lingo_users")
         .update(fields)
         .eq("telegram_id", telegram_id)
         .execute()
@@ -56,32 +56,32 @@ def update_user(telegram_id: int, fields: dict) -> dict:
 
 
 def touch_last_active(telegram_id: int) -> None:
-    supabase.table("users").update(
+    supabase.table("lingo_users").update(
         {"last_active": datetime.now(timezone.utc).isoformat()}
     ).eq("telegram_id", telegram_id).execute()
 
 
 def set_status(telegram_id: int, status: str) -> None:
-    supabase.table("users").update({"status": status}).eq(
+    supabase.table("lingo_users").update({"status": status}).eq(
         "telegram_id", telegram_id
     ).execute()
 
 
 def delete_user(telegram_id: int) -> None:
-    supabase.table("users").delete().eq("telegram_id", telegram_id).execute()
+    supabase.table("lingo_users").delete().eq("telegram_id", telegram_id).execute()
 
 
 # ---------------------------------------------------------------
 # INTERESTS
 # ---------------------------------------------------------------
 def get_all_interests() -> list:
-    res = supabase.table("interests").select("*").order("id").execute()
+    res = supabase.table("lingo_interests").select("*").order("id").execute()
     return res.data or []
 
 
 def set_user_interests(user_id: int, interest_codes: list) -> None:
     # clear existing
-    supabase.table("user_interests").delete().eq("user_id", user_id).execute()
+    supabase.table("lingo_user_interests").delete().eq("user_id", user_id).execute()
     if not interest_codes:
         return
     interests = get_all_interests()
@@ -92,17 +92,17 @@ def set_user_interests(user_id: int, interest_codes: list) -> None:
         if c in code_to_id
     ]
     if rows:
-        supabase.table("user_interests").insert(rows).execute()
+        supabase.table("lingo_user_interests").insert(rows).execute()
 
 
 def get_user_interests(user_id: int) -> list:
     res = (
-        supabase.table("user_interests")
-        .select("interest_id, interests(code, name)")
+        supabase.table("lingo_user_interests")
+        .select("interest_id, lingo_interests(code, name)")
         .eq("user_id", user_id)
         .execute()
     )
-    return [row["interests"]["code"] for row in (res.data or []) if row.get("interests")]
+    return [row["lingo_interests"]["code"] for row in (res.data or []) if row.get("lingo_interests")]
 
 
 # ---------------------------------------------------------------
@@ -110,7 +110,7 @@ def get_user_interests(user_id: int) -> list:
 # ---------------------------------------------------------------
 def create_match(user1_id: int, user2_id: int) -> dict:
     res = (
-        supabase.table("matches")
+        supabase.table("lingo_matches")
         .insert({"user1_id": user1_id, "user2_id": user2_id})
         .execute()
     )
@@ -118,12 +118,12 @@ def create_match(user1_id: int, user2_id: int) -> dict:
 
 
 def end_match(match_id: int, reason: str) -> None:
-    match_res = supabase.table("matches").select("started_at").eq("id", match_id).execute()
+    match_res = supabase.table("lingo_matches").select("started_at").eq("id", match_id).execute()
     duration = None
     if match_res.data:
         started_at = datetime.fromisoformat(match_res.data[0]["started_at"].replace("Z", "+00:00"))
         duration = int((datetime.now(timezone.utc) - started_at).total_seconds())
-    supabase.table("matches").update(
+    supabase.table("lingo_matches").update(
         {
             "ended_at": datetime.now(timezone.utc).isoformat(),
             "end_reason": reason,
@@ -133,7 +133,7 @@ def end_match(match_id: int, reason: str) -> None:
 
 
 def log_message(match_id: int, sender_id: int) -> None:
-    supabase.table("messages").insert(
+    supabase.table("lingo_messages").insert(
         {"match_id": match_id, "sender_id": sender_id}
     ).execute()
 
@@ -142,7 +142,7 @@ def log_message(match_id: int, sender_id: int) -> None:
 # REPORTS
 # ---------------------------------------------------------------
 def create_report(reporter_id: int, reported_id: int, reason: str, match_id: Optional[int] = None) -> None:
-    supabase.table("reports").insert(
+    supabase.table("lingo_reports").insert(
         {
             "reporter_id": reporter_id,
             "reported_id": reported_id,
@@ -151,10 +151,10 @@ def create_report(reporter_id: int, reported_id: int, reason: str, match_id: Opt
         }
     ).execute()
     # increment report_count on the reported user
-    user_res = supabase.table("users").select("id, report_count").eq("id", reported_id).execute()
+    user_res = supabase.table("lingo_users").select("id, report_count").eq("id", reported_id).execute()
     if user_res.data:
         current = user_res.data[0]["report_count"] or 0
-        supabase.table("users").update({"report_count": current + 1}).eq(
+        supabase.table("lingo_users").update({"report_count": current + 1}).eq(
             "id", reported_id
         ).execute()
 
@@ -164,7 +164,7 @@ def create_report(reporter_id: int, reported_id: int, reason: str, match_id: Opt
 # ---------------------------------------------------------------
 def create_payment(user_id: int, method: str, amount, currency: str) -> dict:
     res = (
-        supabase.table("payments")
+        supabase.table("lingo_payments")
         .insert(
             {
                 "user_id": user_id,
@@ -180,14 +180,14 @@ def create_payment(user_id: int, method: str, amount, currency: str) -> dict:
 
 
 def attach_payment_proof(payment_id: int, file_id: str) -> None:
-    supabase.table("payments").update({"proof_screenshot_file_id": file_id}).eq(
+    supabase.table("lingo_payments").update({"proof_screenshot_file_id": file_id}).eq(
         "id", payment_id
     ).execute()
 
 
 def confirm_payment(payment_id: int, admin_note: str = "") -> dict:
     res = (
-        supabase.table("payments")
+        supabase.table("lingo_payments")
         .update(
             {
                 "status": "confirmed",
@@ -202,14 +202,14 @@ def confirm_payment(payment_id: int, admin_note: str = "") -> dict:
 
 
 def reject_payment(payment_id: int, admin_note: str = "") -> None:
-    supabase.table("payments").update(
+    supabase.table("lingo_payments").update(
         {"status": "rejected", "admin_note": admin_note}
     ).eq("id", payment_id).execute()
 
 
 def get_pending_payment_for_user(user_id: int) -> Optional[dict]:
     res = (
-        supabase.table("payments")
+        supabase.table("lingo_payments")
         .select("*")
         .eq("user_id", user_id)
         .eq("status", "pending")
@@ -222,7 +222,7 @@ def get_pending_payment_for_user(user_id: int) -> Optional[dict]:
 
 def activate_premium(telegram_id: int, days: int) -> None:
     until = datetime.now(timezone.utc) + timedelta(days=days)
-    supabase.table("users").update(
+    supabase.table("lingo_users").update(
         {"premium": True, "premium_until": until.isoformat()}
     ).eq("telegram_id", telegram_id).execute()
 
@@ -231,5 +231,5 @@ def activate_premium(telegram_id: int, days: int) -> None:
 # ADMIN STATS
 # ---------------------------------------------------------------
 def get_admin_stats() -> dict:
-    res = supabase.table("admin_stats").select("*").limit(1).execute()
+    res = supabase.table("lingo_admin_stats").select("*").limit(1).execute()
     return res.data[0] if res.data else {}

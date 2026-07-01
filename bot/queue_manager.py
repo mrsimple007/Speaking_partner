@@ -12,6 +12,7 @@ match_id) so message relaying doesn't need a DB lookup per message.
 import asyncio
 from dataclasses import dataclass, field
 from time import time
+from typing import Optional
 
 
 @dataclass
@@ -23,7 +24,7 @@ class QueueEntry:
     gender: str
     interests: set
     premium: bool
-    filter_gender: str | None = None      # premium-only filter
+    filter_gender: Optional[str] = None   # premium-only filter
     filter_interests: set = field(default_factory=set)  # premium-only filter
     joined_at: float = field(default_factory=time)
 
@@ -35,7 +36,7 @@ class MatchingEngine:
         self._lock = asyncio.Lock()
 
     # ---------------- Queue management ----------------
-    async def add_to_queue(self, entry: QueueEntry) -> "QueueEntry | None":
+    async def add_to_queue(self, entry: QueueEntry) -> "Optional[QueueEntry]":
         """Adds user to queue and immediately tries to find a match.
         Returns the matched partner's QueueEntry if a match was made
         and removes both from the queue. Returns None if no match yet
@@ -55,7 +56,7 @@ class MatchingEngine:
     def is_in_queue(self, telegram_id: int) -> bool:
         return telegram_id in self._queue
 
-    def _find_best_match(self, entry: QueueEntry) -> "QueueEntry | None":
+    def _find_best_match(self, entry: QueueEntry) -> "Optional[QueueEntry]":
         candidates = list(self._queue.values())
 
         def passes_filters(a: QueueEntry, b: QueueEntry) -> bool:
@@ -104,10 +105,10 @@ class MatchingEngine:
             self._active_chats[telegram_id_a] = {"partner_id": telegram_id_b, "match_id": match_id}
             self._active_chats[telegram_id_b] = {"partner_id": telegram_id_a, "match_id": match_id}
 
-    def get_chat(self, telegram_id: int) -> dict | None:
+    def get_chat(self, telegram_id: int) -> Optional[dict]:
         return self._active_chats.get(telegram_id)
 
-    async def end_chat(self, telegram_id: int) -> "dict | None":
+    async def end_chat(self, telegram_id: int) -> "Optional[dict]":
         """Ends the chat for both participants. Returns the chat info
         that was removed (containing the partner id), or None."""
         async with self._lock:
