@@ -11,6 +11,34 @@ from bot.queue_manager import engine
 from bot.handlers.matching import _create_match_and_notify, _build_queue_entry
 
 
+
+from telegram.ext import ApplicationHandlerStop
+
+PARTNER_PREFIX = "👤 Partner: "  # or "\n" if you want it more explicit
+
+
+async def relay_priority_guard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """
+    Runs in an early handler group so an active chat can never be
+    intercepted by another catch-all MessageHandler registered later
+    in the default group (e.g. premium's receipt-upload handler).
+
+    If the sender is in an active chat, relay immediately and stop all
+    further handler processing for this update. Otherwise, do nothing
+    and let normal handler resolution continue as before.
+    """
+    telegram_id = update.effective_user.id
+    if engine.is_in_chat(telegram_id):
+        await relay_message(update, context)
+        raise ApplicationHandlerStop
+
+
+def priority_relay_handler():
+    return MessageHandler(
+        filters.ALL & ~filters.COMMAND & ~filters.UpdateType.EDITED_MESSAGE,
+        relay_priority_guard,
+    )
+
 # ---------------------------------------------------------------
 # Message relay — forward everything the user types to their partner
 # ---------------------------------------------------------------
@@ -30,21 +58,19 @@ async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     partner_id = chat_info["partner_id"]
     match_id = chat_info["match_id"]
 
-    # Log message metadata (never log content)
     user = db.get_user_by_telegram_id(telegram_id)
     db.log_message(match_id, user["id"])
     db.touch_last_active(telegram_id)
 
-    # Forward the message to the partner
     msg = update.message
     try:
         if msg.text:
-            await context.bot.send_message(chat_id=partner_id, text=msg.text)
+            await context.bot.send_message(chat_id=partner_id, text=f"{PARTNER_PREFIX}{msg.text}")
         elif msg.photo:
             await context.bot.send_photo(
                 chat_id=partner_id,
                 photo=msg.photo[-1].file_id,
-                caption=msg.caption,
+                caption=f"{PARTNER_PREFIX}{msg.caption}" if msg.caption else PARTNER_PREFIX.strip(),
             )
         elif msg.sticker:
             await context.bot.send_sticker(chat_id=partner_id, sticker=msg.sticker.file_id)
@@ -52,22 +78,22 @@ async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             await context.bot.send_voice(chat_id=partner_id, voice=msg.voice.file_id)
         elif msg.video:
             await context.bot.send_video(
-                chat_id=partner_id, video=msg.video.file_id, caption=msg.caption
+                chat_id=partner_id, video=msg.video.file_id,
+                caption=f"{PARTNER_PREFIX}{msg.caption}" if msg.caption else PARTNER_PREFIX.strip(),
             )
         elif msg.audio:
             await context.bot.send_audio(
-                chat_id=partner_id, audio=msg.audio.file_id, caption=msg.caption
+                chat_id=partner_id, audio=msg.audio.file_id,
+                caption=f"{PARTNER_PREFIX}{msg.caption}" if msg.caption else PARTNER_PREFIX.strip(),
             )
         elif msg.document:
             await context.bot.send_document(
-                chat_id=partner_id, document=msg.document.file_id, caption=msg.caption
+                chat_id=partner_id, document=msg.document.file_id,
+                caption=f"{PARTNER_PREFIX}{msg.caption}" if msg.caption else PARTNER_PREFIX.strip(),
             )
         elif msg.video_note:
-            await context.bot.send_video_note(
-                chat_id=partner_id, video_note=msg.video_note.file_id
-            )
+            await context.bot.send_video_note(chat_id=partner_id, video_note=msg.video_note.file_id)
     except Exception:
-        # Partner blocked the bot or some other error; silently ignore
         pass
 
 

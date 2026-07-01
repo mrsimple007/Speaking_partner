@@ -651,6 +651,7 @@ async def handle_stars_payment(update: Update, context: ContextTypes.DEFAULT_TYP
         payload=f"premium:{telegram_id}:{plan_key}",
         currency="XTR",
         prices=[LabeledPrice(plan_name, stars)],
+        provider_token=""
     )
 
 

@@ -22,7 +22,7 @@ from bot.config import BOT_TOKEN, WAITING_QUEUE_POLL_SECONDS
 from bot.handlers.onboarding import build_onboarding_conversation
 from bot.handlers.menu       import menu_handler
 from bot.handlers.matching   import matching_handlers, queue_matchmaking_tick
-from bot.handlers.chat       import chat_handlers
+from bot.handlers.chat       import chat_handlers, priority_relay_handler
 from bot.handlers.profile    import build_edit_profile_conversation
 from bot.handlers.premium    import premium_handlers
 from bot.handlers.settings   import settings_handlers
@@ -41,6 +41,10 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     app = Application.builder().token(BOT_TOKEN).build()
+
+    # 0. Priority relay guard — must win over any other catch-all
+    #    MessageHandler whenever the sender is mid-chat.
+    app.add_handler(priority_relay_handler(), group=-1)
 
     # 1. Onboarding
     app.add_handler(build_onboarding_conversation())

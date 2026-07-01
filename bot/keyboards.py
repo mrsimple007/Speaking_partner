@@ -4,7 +4,7 @@ from bot.translations import (
     t,
     LANGUAGE_OPTIONS,
     LEVEL_OPTIONS,
-    language_name,
+    language_label,
     INTEREST_NAMES,
     interest_name,
 )
@@ -20,10 +20,19 @@ def ui_language_keyboard() -> InlineKeyboardMarkup:
 
 
 def language_keyboard(lang: str, prefix: str) -> InlineKeyboardMarkup:
-    rows = [
-        [InlineKeyboardButton(language_name(code, lang), callback_data=f"{prefix}:{code}")]
-        for code in LANGUAGE_OPTIONS
-    ]
+    """
+    Two languages per row with flag + name, e.g. '🇬🇧 English'.
+    Signature unchanged (lang, prefix) so existing call sites keep working.
+    """
+    rows = []
+    row = []
+    for code in LANGUAGE_OPTIONS:
+        row.append(InlineKeyboardButton(language_label(code, lang), callback_data=f"{prefix}:{code}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
     return InlineKeyboardMarkup(rows)
 
 
@@ -31,7 +40,7 @@ def level_keyboard(lang: str, prefix: str = "level") -> InlineKeyboardMarkup:
     rows = []
     row = []
     for level in LEVEL_OPTIONS:
-        label = t("level_native", lang) if level == "native" else level
+        label = t("level_native", lang) if level == "native" else f"📊 {level}"
         row.append(InlineKeyboardButton(label, callback_data=f"{prefix}:{level}"))
         if len(row) == 3:
             rows.append(row)
@@ -122,16 +131,5 @@ def settings_keyboard(lang: str) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(t("edit_profile_button", lang), callback_data="settings:edit_profile")],
         [InlineKeyboardButton(t("settings_change_ui_language", lang), callback_data="settings:ui_lang")],
-        [InlineKeyboardButton(t("settings_delete_account", lang), callback_data="settings:delete")],
-    ]
-    return InlineKeyboardMarkup(rows)
-
-
-def confirm_delete_keyboard(lang: str) -> InlineKeyboardMarkup:
-    rows = [
-        [
-            InlineKeyboardButton(t("confirm_yes", lang), callback_data="delete:confirm"),
-            InlineKeyboardButton(t("confirm_no", lang), callback_data="delete:cancel"),
-        ]
     ]
     return InlineKeyboardMarkup(rows)
