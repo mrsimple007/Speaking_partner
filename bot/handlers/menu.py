@@ -1,0 +1,47 @@
+from telegram import Update
+from telegram.ext import ContextTypes, CallbackQueryHandler
+
+from bot import db, keyboards
+from bot.translations import t
+
+
+async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, lang: str) -> None:
+    text = t("main_menu", lang)
+    if update.callback_query:
+        await update.callback_query.message.reply_text(text, reply_markup=keyboards.main_menu_keyboard(lang))
+    else:
+        await update.message.reply_text(text, reply_markup=keyboards.main_menu_keyboard(lang))
+
+
+async def menu_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Routes top-level main-menu button presses to the right module.
+    Imported lazily inside to avoid circular imports."""
+    query = update.callback_query
+    await query.answer()
+    action = query.data.split(":")[1]
+    telegram_id = update.effective_user.id
+    user = db.get_user_by_telegram_id(telegram_id)
+    if not user:
+        return
+    lang = user.get("ui_language", "en")
+
+    if action == "find":
+        from bot.handlers.matching import find_partner_entry
+
+        await find_partner_entry(update, context)
+    elif action == "profile":
+        from bot.handlers.profile import show_profile
+
+        await show_profile(update, context)
+    elif action == "premium":
+        from bot.handlers.premium import show_premium
+
+        await show_premium(update, context)
+    elif action == "settings":
+        from bot.handlers.settings import show_settings
+
+        await show_settings(update, context)
+
+
+def menu_handler() -> CallbackQueryHandler:
+    return CallbackQueryHandler(menu_router, pattern=r"^menu:")
