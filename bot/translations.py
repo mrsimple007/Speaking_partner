@@ -267,6 +267,15 @@ TRANSLATIONS = {
         "ru": "⭐ Эта функция доступна только для Премиум пользователей.\n\nПерейдите в раздел Премиум, чтобы улучшить аккаунт!",
         "en": "⭐ This feature is only available for Premium users.\n\nCheck out the Premium section to upgrade!",
     },
+
+
+
+"main_menu_header": {
+    "uz": "👋 Xush kelibsiz, {name}!\n\nMana sizning profilingiz:",
+    "ru": "👋 С возвращением, {name}!\n\nВот ваш профиль:",
+    "en": "👋 Welcome back, {name}!\n\nHere's your profile:",
+},
+
 }
 
 # ─────────────────────────────────────────────────────────────

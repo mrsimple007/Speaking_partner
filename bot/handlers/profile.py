@@ -16,6 +16,9 @@ def format_profile_text(user: dict, interests: list, lang: str) -> str:
     body = _format_profile(user, interests, lang)
     return f"{header}\n\n{body}"
 
+def format_profile_body(user: dict, interests: list, lang: str) -> str:
+    return _format_profile(user, interests, lang)
+
 def _format_profile(user: dict, interests: list, lang: str) -> str:
     native = language_name(user.get("native_language", ""), lang)
     learning = language_name(user.get("learning_language", ""), lang)
