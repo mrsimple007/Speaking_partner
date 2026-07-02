@@ -14,9 +14,9 @@ TRANSLATIONS = {
         "en": "👋 Hey there!\nPick the language you'd like to use the bot in:",
     },
     "welcome": {
-        "uz": "🎉 Xush kelibsiz, LangBridge oilasiga!\n\nKeling, siz uchun mukammal til partnerini topaylik 🤝\nBir necha oddiy savolga javob bering — bor-yo'g'i 1 daqiqa vaqt oladi ⏱",
-        "ru": "🎉 Добро пожаловать в LangBridge!\n\nДавайте подберём для вас идеального языкового партнёра 🤝\nОтветьте на пару простых вопросов — это займёт всего минуту ⏱",
-        "en": "🎉 Welcome to LangBridge!\n\nLet's find you the perfect language exchange partner 🤝\nJust answer a few quick questions — it'll take about a minute ⏱",
+        "uz": "🎉 Xush kelibsiz, LingoMatch oilasiga!\n\nKeling, siz uchun mukammal til partnerini topaylik 🤝\nBir necha oddiy savolga javob bering — bor-yo'g'i 1 daqiqa vaqt oladi ⏱",
+        "ru": "🎉 Добро пожаловать в LingoMatch!\n\nДавайте подберём для вас идеального языкового партнёра 🤝\nОтветьте на пару простых вопросов — это займёт всего минуту ⏱",
+        "en": "🎉 Welcome to LingoMatch!\n\nLet's find you the perfect language exchange partner 🤝\nJust answer a few quick questions — it'll take about a minute ⏱",
     },
     "ask_native_language": {
         "uz": "🗣 1-qadam: Sizning ona tilingiz qaysi?\n\nBu bizga sizni to'g'ri partner bilan bog'lashga yordam beradi.",
@@ -173,9 +173,9 @@ TRANSLATIONS = {
         "en": "✏️ Edit Profile",
     },
     "premium_header": {
-        "uz": "⭐ LangBridge Premium\n\nMuloqotni keyingi bosqichga olib chiqing!",
-        "ru": "⭐ LangBridge Премиум\n\nВыведите общение на новый уровень!",
-        "en": "⭐ LangBridge Premium\n\nTake your language exchange to the next level!",
+        "uz": "⭐ LingoMatch Premium\n\nMuloqotni keyingi bosqichga olib chiqing!",
+        "ru": "⭐ LingoMatch Премиум\n\nВыведите общение на новый уровень!",
+        "en": "⭐ LingoMatch Premium\n\nTake your language exchange to the next level!",
     },
     "premium_features": {
         "uz": "💎 Imkoniyatlar:\n♾ Cheksiz partnerlar\n🧑‍🤝‍🧑 Jins bo'yicha filtr\n🎯 Qiziqish bo'yicha filtr\n⚡ Navbatda ustuvorlik",
@@ -267,6 +267,13 @@ TRANSLATIONS = {
         "ru": "⭐ Эта функция доступна только для Премиум пользователей.\n\nПерейдите в раздел Премиум, чтобы улучшить аккаунт!",
         "en": "⭐ This feature is only available for Premium users.\n\nCheck out the Premium section to upgrade!",
     },
+
+
+"start_intro": {
+    "uz": "🤝 LingoMatch — bu til o'rganish uchun speaking partneri topishga yordam beruvchi bot.\n\nBotdan foydalanish juda oson:\n1️⃣ Profilingizni to'ldirasiz\n2️⃣ \"🔍 Partner topish\" tugmasни bosasiz\n3️⃣ Sizga mos partner topilgach, suhbatни boshlaysiz!\n\nKeling, boshlaymiz 👇",
+    "ru": "🤝 LingoMatch — бот, который помогает найти партнёра для языкового обмена.\n\nПользоваться очень просто:\n1️⃣ Заполните профиль\n2️⃣ Нажмите «🔍 Найти партнёра»\n3️⃣ Как только найдём подходящего собеседника — начинайте общение!\n\nНачнём 👇",
+    "en": "🤝 LingoMatch is a bot that helps you find a language exchange partner to practice with.\n\nHere's how it works:\n1️⃣ Fill in your profile\n2️⃣ Tap \"🔍 Find Partner\"\n3️⃣ Once we match you, start chatting!\n\nLet's get started 👇",
+},
 
 
 

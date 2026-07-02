@@ -8,10 +8,7 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
-# All admins receive payment notifications
-NOTIFICATION_ADMIN_IDS = [
-    int(x) for x in os.getenv("NOTIFICATION_ADMIN_IDS", "").split(",") if x.strip()
-]
+
 # Only this admin can press Approve / Decline
 ADMIN_CHAT_ID = os.getenv("ADMIN_CHAT_ID", "")
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "@admin")
@@ -30,3 +27,10 @@ PREMIUM_STARS = {
 
 MAX_INTERESTS = 20
 WAITING_QUEUE_POLL_SECONDS = 2
+
+
+ADMIN_IDS = [
+    "8437026582",  # Main admin - always gets notifications
+    # "8126290272",  # MR_2
+    # "999932510",   # MrSimple07
+]
