@@ -94,7 +94,7 @@ TRANSLATIONS = {
         "en": "❌ Cancel search",
     },
     "partner_found": {
-        "uz": "🎉 partner topildi!\n\n📚 O'rganayotgan tili: {learning}\n📈 Daraja: {level}\n🎯 Qiziqishlari: {interests}\n\n👋 Salom bering va suhbatni boshlang!",
+        "uz": "🎉 Speaking Partner topildi!\n\n📚 O'rganayotgan tili: {learning}\n📈 Daraja: {level}\n🎯 Qiziqishlari: {interests}\n\n👋 Salom bering va suhbatni boshlang!",
         "ru": "🎉 Партнёр найден!\n\n📚 Изучаемый язык: {learning}\n📈 Уровень: {level}\n🎯 Интересы: {interests}\n\n👋 Поздоровайтесь и начните беседу!",
         "en": "🎉 Partner Found!\n\n📚 Learning language: {learning}\n📈 Level: {level}\n🎯 Interests: {interests}\n\n👋 Say hello and start chatting!",
     },
