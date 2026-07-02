@@ -3,10 +3,13 @@ from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from bot import db, keyboards
 from bot.translations import t
-
+from bot.handlers.profile import format_profile_text
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE, lang: str) -> None:
-    text = t("main_menu", lang)
+    telegram_id = update.effective_user.id
+    user = db.get_user_by_telegram_id(telegram_id)
+    interests = db.get_user_interests(user["id"])
+    text = format_profile_text(user, interests, lang)
     if update.callback_query:
         await update.callback_query.message.reply_text(text, reply_markup=keyboards.main_menu_keyboard(lang))
     else:

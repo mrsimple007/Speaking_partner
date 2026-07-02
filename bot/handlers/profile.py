@@ -11,6 +11,11 @@ from bot.translations import t, language_name, interest_name
 EDIT_NATIVE, EDIT_LEARNING, EDIT_LEVEL, EDIT_GENDER, EDIT_INTERESTS = range(10, 15)
 
 
+def format_profile_text(user: dict, interests: list, lang: str) -> str:
+    header = t("profile_header", lang)
+    body = _format_profile(user, interests, lang)
+    return f"{header}\n\n{body}"
+
 def _format_profile(user: dict, interests: list, lang: str) -> str:
     native = language_name(user.get("native_language", ""), lang)
     learning = language_name(user.get("learning_language", ""), lang)

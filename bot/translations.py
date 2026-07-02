@@ -59,7 +59,7 @@ TRANSLATIONS = {
         "en": "🏠 Main menu\n\nChoose an option below:",
     },
     "menu_find_partner": {
-        "uz": "🔍 partner topish",
+        "uz": "🔍 Partner topish",
         "ru": "🔍 Найти партнёра",
         "en": "🔍 Find Partner",
     },
@@ -124,7 +124,7 @@ TRANSLATIONS = {
         "en": "👋 Chat ended.\n\nYou're back at the main menu. Want to find a new partner?",
     },
     "partner_left": {
-        "uz": "😔 partneringiz suhbatni tark etdi.\n\nXavotir olmang — yangi partner topish oson!",
+        "uz": "😔 Partneringiz suhbatni tark etdi.\n\nXavotir olmang — yangi partner topish oson!",
         "ru": "😔 Ваш партнёр покинул чат.\n\nНе расстраивайтесь — найти нового партнёра легко!",
         "en": "😔 Your partner left the chat.\n\nNo worries — finding a new one is easy!",
     },
