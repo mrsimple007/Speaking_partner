@@ -29,7 +29,7 @@ MAX_INTERESTS = 20
 WAITING_QUEUE_POLL_SECONDS = 2
 
 
-ADMIN_IDS = [
+ADMIN_TELEGRAM_IDS = [
     "8437026582",  # Main admin - always gets notifications
     # "8126290272",  # MR_2
     # "999932510",   # MrSimple07
