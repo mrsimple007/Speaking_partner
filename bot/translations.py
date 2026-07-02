@@ -124,17 +124,17 @@ TRANSLATIONS = {
         "en": "👋 Chat ended.\n\nYou're back at the main menu. Want to find a new partner?",
     },
     "partner_left": {
-        "uz": "😔 Partneringiz suhbatni tark etdi.\n\nXavotir olmang — yangi partner topish oson!",
+        "uz": "😔 Partneringiz suhbatni tark etdi.\n\nXavotir olmang — yangi partner topish oson! Shunchaki pastdagi knopkadan foydalaning",
         "ru": "😔 Ваш партнёр покинул чат.\n\nНе расстраивайтесь — найти нового партнёра легко!",
         "en": "😔 Your partner left the chat.\n\nNo worries — finding a new one is easy!",
     },
     "searching_new_partner": {
-        "uz": "🔎 Yangi partner qidirilmoqda...",
+        "uz": "🔎 Yangi speakingpartner qidirilmoqda...",
         "ru": "🔎 Ищем нового партнёра...",
         "en": "🔎 Searching for another partner...",
     },
     "not_in_chat": {
-        "uz": "ℹ️ Siz hozir suhbatda emassiz.\n\npartner topish uchun asosiy menyudan foydalaning 🔍",
+        "uz": "ℹ️ Suhbatingiz tugatildi.\n\n Yangi partner topish uchun quyidagi knopkadan foydalaning 🔍",
         "ru": "ℹ️ Вы сейчас не в чате.\n\nИспользуйте главное меню, чтобы найти партнёра 🔍",
         "en": "ℹ️ You're not in a chat right now.\n\nUse the main menu to find a partner 🔍",
     },
