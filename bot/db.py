@@ -28,20 +28,42 @@ def get_user_by_telegram_id(telegram_id: int) -> Optional[dict]:
     return res.data[0] if res.data else None
 
 
-def create_user(telegram_id: int, ui_language: str = "en") -> dict:
+def create_user(
+    telegram_id: int,
+    ui_language: str = "en",
+    first_name: str = "",
+    last_name: str = "",
+    username: str = "",
+) -> dict:
     res = (
         supabase.table("lingo_users")
-        .insert({"telegram_id": telegram_id, "ui_language": ui_language, "native_language": ""})
+        .insert(
+            {
+                "telegram_id": telegram_id,
+                "ui_language": ui_language,
+                "native_language": "",
+                "first_name": first_name or "",
+                "last_name": last_name or "",
+                "username": username or "",
+            }
+        )
         .execute()
     )
     return res.data[0]
 
 
-def get_or_create_user(telegram_id: int, ui_language: str = "en") -> dict:
+def get_or_create_user(
+    telegram_id: int,
+    ui_language: str = "en",
+    first_name: str = "",
+    last_name: str = "",
+    username: str = "",
+) -> dict:
     user = get_user_by_telegram_id(telegram_id)
     if user:
         return user
-    return create_user(telegram_id, ui_language)
+    return create_user(telegram_id, ui_language, first_name, last_name, username)
+
 
 
 def update_user(telegram_id: int, fields: dict) -> dict:

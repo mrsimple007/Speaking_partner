@@ -92,12 +92,18 @@ async def choose_ui_language(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await query.answer()
     lang = query.data.split(":")[1]
     telegram_id = update.effective_user.id
+    tg_user = update.effective_user
 
     user = db.get_user_by_telegram_id(telegram_id)
     if not user:
-        user = db.create_user(telegram_id, ui_language=lang)
+        user = db.create_user(
+            telegram_id,
+            ui_language=lang,
+            first_name=tg_user.first_name or "",
+            last_name=tg_user.last_name or "",
+            username=tg_user.username or "",
+        )
         logger.info("New user created: telegram_id=%s ui_language=%s", telegram_id, lang)
-    
     else:
         db.update_user(telegram_id, {"ui_language": lang})
         logger.info("Existing user updated ui_language: telegram_id=%s -> %s", telegram_id, lang)
