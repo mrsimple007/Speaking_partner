@@ -283,6 +283,14 @@ TRANSLATIONS = {
     "en": "👋 Welcome back, {name}!\n\nHere's your profile:",
 },
 
+
+"main_menu_footer": {
+    "uz": "\n👇 Speaking partner topish uchun pastdagi \"🔍 Partner topish\" tugmasini bosing.",
+    "ru": "\n👇 Чтобы найти собеседника, нажмите кнопку \"🔍 Найти партнёра\" ниже.",
+    "en": "\n👇 Tap the \"🔍 Find Partner\" button below to find a speaking partner.",
+},
+
+
 }
 
 # ─────────────────────────────────────────────────────────────

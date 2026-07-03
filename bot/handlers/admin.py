@@ -1,5 +1,5 @@
 """
-Admin commands — only work for telegram IDs listed in ADMIN_TELEGRAM_IDS.
+Admin commands — only work for telegram IDs listed in ADMIN_IDS.
 /admin                 — show stats dashboard
 /admin ban <id>        — ban a user by their Telegram ID
 /admin unban <id>      — lift a ban
@@ -10,23 +10,42 @@ from telegram.ext import ContextTypes, CommandHandler
 from bot import db, config
 from bot.queue_manager import engine
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def _require_admin(func):
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        if update.effective_user.id not in config.ADMIN_TELEGRAM_IDS:
+        user_id = update.effective_user.id
+        if user_id not in config.ADMIN_IDS:
+            logger.warning(
+                "Unauthorized /admin attempt by telegram_id=%s (allowed: %s)",
+                user_id, config.ADMIN_IDS,
+            )
             return
+        logger.info("Admin command by telegram_id=%s: args=%s", user_id, context.args)
         await func(update, context)
     return wrapper
-
 
 @_require_admin
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     args = context.args or []
     if not args:
-        # Show stats
         stats = db.get_admin_stats()
+
+        # Total approved payments (sum + count)
+        payments = (
+            db.supabase.table("lingo_payments")
+            .select("amount")
+            .eq("status", "approved")
+            .execute()
+            .data
+        )
+        total_payments_amount = sum(p["amount"] for p in payments) if payments else 0
+        total_payments_count = len(payments)
+
         lines = [
-            "📊 *LangBridge Admin Stats*",
+            "📊 *LingoMatch Admin Stats*",
             f"Total users: {stats.get('total_users', 0)}",
             f"Active (24h): {stats.get('active_users_24h', 0)}",
             f"Premium users: {stats.get('premium_users', 0)}",
@@ -35,8 +54,12 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             f"Reports today: {stats.get('reports_today', 0)}",
             f"Queue size now: {len(engine._queue)}",
             f"Active chats now: {len(engine._active_chats) // 2}",
+            "",
+            f"💰 Total approved payments: {total_payments_count}",
+            f"💵 Total revenue collected: {total_payments_amount}",
         ]
         await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+        logger.info("Admin %s requested stats dashboard", update.effective_user.id)
         return
 
     subcmd = args[0].lower()
@@ -46,11 +69,13 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         db.update_user(target_id, {"banned": True, "status": "banned"})
         await engine.remove_from_queue(target_id)
         await update.message.reply_text(f"✅ User {target_id} banned.")
+        logger.info("Admin %s banned user %s", update.effective_user.id, target_id)
 
     elif subcmd == "unban" and len(args) >= 2:
         target_id = int(args[1])
         db.update_user(target_id, {"banned": False, "status": "idle"})
         await update.message.reply_text(f"✅ User {target_id} unbanned.")
+        logger.info("Admin %s unbanned user %s", update.effective_user.id, target_id)
 
     elif subcmd == "payments":
         # List last 10 pending manual payments

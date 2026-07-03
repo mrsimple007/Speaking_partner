@@ -9,7 +9,7 @@ from bot import db, keyboards
 from bot.translations import t
 from bot.queue_manager import engine
 from bot.handlers.matching import _create_match_and_notify, _build_queue_entry
-
+from bot.utils import typing
 
 
 from telegram.ext import ApplicationHandlerStop
@@ -57,6 +57,8 @@ async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     partner_id = chat_info["partner_id"]
     match_id = chat_info["match_id"]
+    await typing(context, partner_id)
+
 
     user = db.get_user_by_telegram_id(telegram_id)
     db.log_message(match_id, user["id"])
@@ -116,6 +118,8 @@ async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     match_id = chat_info["match_id"]
+    await typing(context, partner_id)
+
     partner_id = chat_info["partner_id"]
 
     db.end_match(match_id, "end")
@@ -154,6 +158,8 @@ async def next_partner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     chat_info = await engine.end_chat(telegram_id)
     if chat_info:
         match_id = chat_info["match_id"]
+        await typing(context, partner_id)
+
         partner_id = chat_info["partner_id"]
 
         db.end_match(match_id, "next")

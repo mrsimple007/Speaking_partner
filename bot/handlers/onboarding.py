@@ -12,6 +12,10 @@ from telegram.ext import (
 from bot import config, db, keyboards
 from bot.translations import t
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 # Conversation states
 CHOOSING_UI_LANG, NATIVE_LANG, LEARNING_LANG, LEVEL, GENDER, INTERESTS = range(6)
 
@@ -23,7 +27,7 @@ async def _notify_admins_new_user(context, telegram_id: int, tg_user) -> None:
     """Send a short new-user card to all notification admins."""
     try:
         # Count total users
-        total = db.supabase.table("users").select("id", count="exact").execute().count or "?"
+        total = db.supabase.table("lingo_users").select("id", count="exact").execute().count or "?"
 
         username = tg_user.username
         name     = tg_user.full_name or f"User_{telegram_id}"
@@ -43,7 +47,7 @@ async def _notify_admins_new_user(context, telegram_id: int, tg_user) -> None:
             f"👥 Total users: <b>{total}</b>"
         )
 
-        for admin_id in config.NOTIFICATION_ADMIN_IDS:
+        for admin_id in config.ADMIN_IDS:
             try:
                 await context.bot.send_message(
                     chat_id=admin_id, text=text, parse_mode=ParseMode.HTML
@@ -92,13 +96,16 @@ async def choose_ui_language(update: Update, context: ContextTypes.DEFAULT_TYPE)
     user = db.get_user_by_telegram_id(telegram_id)
     if not user:
         user = db.create_user(telegram_id, ui_language=lang)
+        logger.info("New user created: telegram_id=%s ui_language=%s", telegram_id, lang)
+    
     else:
         db.update_user(telegram_id, {"ui_language": lang})
+        logger.info("Existing user updated ui_language: telegram_id=%s -> %s", telegram_id, lang)
 
     context.user_data["ui_language"] = lang
     context.user_data["interests_selected"] = set()
 
-    await query.edit_message_text(t("welcome", lang))
+    await query.edit_message_text(f"{t('welcome', lang)}\n\n{t('start_intro', lang)}")
     await query.message.reply_text(
         t("ask_native_language", lang),
         reply_markup=keyboards.language_keyboard(lang, "native"),
@@ -216,6 +223,14 @@ async def finish_interests(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         },
     )
     db.set_user_interests(user["id"], list(context.user_data.get("interests_selected", set())))
+
+    logger.info(
+        "Onboarding completed: telegram_id=%s native=%s learning=%s level=%s",
+        telegram_id,
+        context.user_data.get("native_language"),
+        context.user_data.get("learning_language"),
+        context.user_data.get("level"),
+    )
 
     await query.edit_message_text(t("interests_saved", lang))
 

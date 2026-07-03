@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+# BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN_SIMPLELEARNINGUZ", "")
+
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
@@ -29,8 +31,7 @@ MAX_INTERESTS = 20
 WAITING_QUEUE_POLL_SECONDS = 2
 
 
-ADMIN_TELEGRAM_IDS = [
-    "8437026582",  # Main admin - always gets notifications
-    # "8126290272",  # MR_2
-    # "999932510",   # MrSimple07
+# Admins allowed to use /admin (comma-separated Telegram IDs)
+ADMIN_IDS = [
+    int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()
 ]
