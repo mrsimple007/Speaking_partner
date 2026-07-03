@@ -13,7 +13,7 @@ import asyncio
 from dataclasses import dataclass, field
 from time import time
 from typing import Optional
-
+from time import time
 
 @dataclass
 class QueueEntry:

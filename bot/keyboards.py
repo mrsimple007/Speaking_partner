@@ -8,7 +8,18 @@ from bot.translations import (
     INTEREST_NAMES,
     interest_name,
 )
+COMMON_LANGUAGES = ["en", "ru", "uz", "tr", "ar"]
 
+def language_keyboard(lang: str, field: str, show_all: bool = False) -> InlineKeyboardMarkup:
+    codes = LANGUAGE_OPTIONS if show_all else COMMON_LANGUAGES
+    buttons = [
+        InlineKeyboardButton(language_label(c, lang), callback_data=f"{field}:{c}")
+        for c in codes
+    ]
+    rows = [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+    if not show_all:
+        rows.append([InlineKeyboardButton(t("other_button", lang), callback_data=f"{field}_more")])
+    return InlineKeyboardMarkup(rows)
 
 def ui_language_keyboard() -> InlineKeyboardMarkup:
     rows = [

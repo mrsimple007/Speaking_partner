@@ -60,35 +60,40 @@ async def find_partner_entry(update: Update, context: ContextTypes.DEFAULT_TYPE)
     await _create_match_and_notify(context, user, partner_user)
 
 
-async def _create_match_and_notify(context: ContextTypes.DEFAULT_TYPE, user_a: dict, user_b: dict) -> None:
+import asyncio
+import random
+
+_GREETINGS = ["hi", "hello", "hey 👋", "hi there!", "hello 😊"]
+
+async def _create_match_and_notify(context, user_a, user_b):
     match = db.create_match(user_a["id"], user_b["id"])
     await engine.start_chat(user_a["telegram_id"], user_b["telegram_id"], match["id"])
 
     db.set_status(user_a["telegram_id"], "chatting")
     db.set_status(user_b["telegram_id"], "chatting")
 
-    await _notify_match(context, user_a, user_b)
-    await _notify_match(context, user_b, user_a)
-
-
-async def _notify_match(context: ContextTypes.DEFAULT_TYPE, recipient: dict, partner: dict) -> None:
-    lang = recipient.get("ui_language", "en")
-    interests = db.get_user_interests(partner["id"])
-    interests_str = ", ".join(interest_name(c, lang) for c in interests) or "-"
-
-    text = t(
-        "partner_found",
-        lang,
-        learning=language_name(partner["learning_language"], lang),
-        level=partner["level"],
-        interests=interests_str,
+    await asyncio.gather(
+        _notify_match(context, user_a, user_b),
+        _notify_match(context, user_b, user_a),
     )
+
+async def _notify_match(context, recipient, partner):
+    lang = recipient.get("ui_language", "en")
+
     await context.bot.send_message(
         chat_id=recipient["telegram_id"],
-        text=text,
+        text=f"👤 Partner: {random.choice(_GREETINGS)}",
+    )
+    await asyncio.sleep(random.uniform(5, 6))
+
+    interests = db.get_user_interests(partner["id"])
+    interests_str = ", ".join(interest_name(c, lang) for c in interests) or "-"
+    text = t("partner_found", lang, learning=language_name(partner["learning_language"], lang),
+             level=partner["level"], interests=interests_str)
+    await context.bot.send_message(
+        chat_id=recipient["telegram_id"], text=text,
         reply_markup=keyboards.chat_controls_keyboard(lang),
     )
-
 
 async def cancel_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
@@ -107,14 +112,16 @@ async def cancel_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await show_main_menu(update, context, lang)
 
 
+from time import time  # add to imports
+
 async def queue_matchmaking_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
     async with engine._lock:
         entries = list(engine._queue.values())
 
-    # Premium users get matched first each tick (priority queue)
     entries.sort(key=lambda e: (not e.premium, e.joined_at))
-
     matched_ids = set()
+    now = time()
+
     for entry in entries:
         if entry.telegram_id in matched_ids:
             continue
@@ -122,7 +129,18 @@ async def queue_matchmaking_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
             if entry.telegram_id not in engine._queue:
                 continue
             partner = engine._find_best_match(entry)
-            if not partner or partner.telegram_id in matched_ids:
+            if not partner or partner.telegram_id in matched_ids or partner.telegram_id not in engine._queue:
+                partner = None
+
+            if not partner and (now - entry.joined_at) >= 45:
+                partner = next(
+                    (e for e in engine._queue.values()
+                     if e.telegram_id != entry.telegram_id
+                     and e.telegram_id not in matched_ids
+                     and (now - e.joined_at) >= 45),
+                    None,
+                )
+            if not partner:
                 continue
             del engine._queue[entry.telegram_id]
             del engine._queue[partner.telegram_id]
@@ -134,7 +152,6 @@ async def queue_matchmaking_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
         user_b = db.get_user_by_telegram_id(partner.telegram_id)
         if user_a and user_b:
             await _create_match_and_notify(context, user_a, user_b)
-
 
 def matching_handlers() -> list:
     return [CallbackQueryHandler(cancel_search, pattern=r"^search:cancel$")]

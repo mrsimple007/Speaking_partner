@@ -170,6 +170,21 @@ async def choose_level(update: Update, context: ContextTypes.DEFAULT_TYPE) -> in
     return GENDER
 
 
+async def show_all_native(update, context):
+    query = update.callback_query
+    await query.answer()
+    lang = context.user_data.get("ui_language", "en")
+    await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "native", show_all=True))
+    return NATIVE_LANG
+
+async def show_all_learning(update, context):
+    query = update.callback_query
+    await query.answer()
+    lang = context.user_data.get("ui_language", "en")
+    await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "learning", show_all=True))
+    return LEARNING_LANG
+
+
 # ───────────────────────────────────────────────────────────────
 # STEP 5 — Gender
 # ───────────────────────────────────────────────────────────────
@@ -260,6 +275,10 @@ def build_onboarding_conversation() -> ConversationHandler:
             INTERESTS: [
                 CallbackQueryHandler(finish_interests, pattern=r"^interest_done$"),
                 CallbackQueryHandler(toggle_interest,  pattern=r"^interest:"),
+                CallbackQueryHandler(show_all_native, pattern=r"^native_more$"),
+                CallbackQueryHandler(show_all_learning, pattern=r"^learning_more$"),
+                CallbackQueryHandler(choose_learning_language, pattern=r"^learning:"),
+
             ],
         },
         fallbacks=[CommandHandler("start", start)],

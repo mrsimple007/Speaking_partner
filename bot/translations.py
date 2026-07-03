@@ -319,6 +319,8 @@ TRANSLATIONS = {
 },
 
 
+"other_button": {"uz": "🌐 Boshqa", "ru": "🌐 Другой", "en": "🌐 Other"},
+
 
 }
 

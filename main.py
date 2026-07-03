@@ -27,6 +27,8 @@ from bot.handlers.profile    import build_edit_profile_conversation
 from bot.handlers.premium    import premium_handlers
 from bot.handlers.settings   import settings_handlers
 from bot.handlers.admin      import admin_handler
+from telegram.ext import CommandHandler 
+
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",

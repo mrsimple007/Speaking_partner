@@ -10,7 +10,7 @@ from bot.translations import t
 from bot.queue_manager import engine
 from bot.handlers.matching import _create_match_and_notify, _build_queue_entry
 from bot.utils import typing
-
+from telegram.ext import CommandHandler 
 
 from telegram.ext import ApplicationHandlerStop
 
@@ -38,6 +38,38 @@ def priority_relay_handler():
         filters.ALL & ~filters.COMMAND & ~filters.UpdateType.EDITED_MESSAGE,
         relay_priority_guard,
     )
+
+async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    telegram_id = update.effective_user.id
+    user = db.get_user_by_telegram_id(telegram_id)
+    lang = user.get("ui_language", "en") if user else "en"
+
+    chat_info = await engine.end_chat(telegram_id)
+    if not chat_info:
+        await update.message.reply_text(
+            t("not_in_chat", lang), reply_markup=keyboards.main_menu_keyboard(lang)
+        )
+        return
+
+    match_id, partner_id = chat_info["match_id"], chat_info["partner_id"]
+    db.end_match(match_id, "end")
+    db.set_status(telegram_id, "idle")
+    db.set_status(partner_id, "idle")
+
+    await update.message.reply_text(
+        t("chat_ended_by_you", lang), reply_markup=keyboards.main_menu_keyboard(lang)
+    )
+    partner_user = db.get_user_by_telegram_id(partner_id)
+    partner_lang = partner_user.get("ui_language", "en") if partner_user else "en"
+    try:
+        await context.bot.send_message(
+            chat_id=partner_id,
+            text=t("partner_left", partner_lang),
+            reply_markup=keyboards.main_menu_keyboard(partner_lang),
+        )
+    except Exception:
+        pass
+
 
 # ---------------------------------------------------------------
 # Message relay — forward everything the user types to their partner
@@ -158,6 +190,8 @@ async def next_partner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     chat_info = await engine.end_chat(telegram_id)
     if chat_info:
         match_id = chat_info["match_id"]
+        partner_id = chat_info["partner_id"]
+
         await typing(context, partner_id)
 
         partner_id = chat_info["partner_id"]
@@ -247,6 +281,8 @@ async def submit_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     if chat_info:
         db.end_match(chat_info["match_id"], "report")
         db.set_status(telegram_id, "idle")
+        match_id = chat_info["match_id"]
+
         partner_id = chat_info["partner_id"]
         db.set_status(partner_id, "idle")
         try:
@@ -272,6 +308,7 @@ def chat_handlers() -> list:
         CallbackQueryHandler(next_partner, pattern=r"^chat:next$"),
         CallbackQueryHandler(report_prompt, pattern=r"^chat:report$"),
         CallbackQueryHandler(submit_report, pattern=r"^report_reason:"),
+        CommandHandler("stop", stop_command),
         MessageHandler(
             filters.ALL & ~filters.COMMAND & ~filters.UpdateType.EDITED_MESSAGE,
             relay_message,

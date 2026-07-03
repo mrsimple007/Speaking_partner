@@ -69,12 +69,28 @@ async def start_edit_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
     context.user_data["ui_language"] = lang
     context.user_data["interests_selected"] = set(db.get_user_interests(user["id"]))
 
+    await engine.remove_from_queue(telegram_id)  # add this line
+
     await query.message.reply_text(
         t("ask_native_language", lang),
         reply_markup=keyboards.language_keyboard(lang, "edit_native"),
     )
     return EDIT_NATIVE
 
+
+async def edit_show_all_native(update, context):
+    query = update.callback_query
+    await query.answer()
+    lang = context.user_data.get("ui_language", "en")
+    await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "edit_native", show_all=True))
+    return EDIT_NATIVE
+
+async def edit_show_all_learning(update, context):
+    query = update.callback_query
+    await query.answer()
+    lang = context.user_data.get("ui_language", "en")
+    await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "edit_learning", show_all=True))
+    return EDIT_LEARNING
 
 async def edit_native(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
@@ -143,6 +159,8 @@ async def edit_toggle_interest(update: Update, context: ContextTypes.DEFAULT_TYP
     return EDIT_INTERESTS
 
 
+from bot.queue_manager import engine  # add to imports
+
 async def edit_finish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
@@ -160,12 +178,15 @@ async def edit_finish(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     )
     db.set_user_interests(user["id"], list(context.user_data.get("interests_selected", set())))
 
+    # Purge any stale queue entry (old language/level) left over from
+    # a search that was in progress when the user opened edit-profile.
+    await engine.remove_from_queue(telegram_id)
+
     await query.edit_message_text(t("interests_saved", lang))
     from bot.handlers.menu import show_main_menu
 
     await show_main_menu(update, context, lang)
     return ConversationHandler.END
-
 
 def build_edit_profile_conversation() -> ConversationHandler:
     return ConversationHandler(
@@ -173,8 +194,14 @@ def build_edit_profile_conversation() -> ConversationHandler:
             CallbackQueryHandler(start_edit_profile, pattern=r"^settings:edit_profile$")
         ],
         states={
-            EDIT_NATIVE: [CallbackQueryHandler(edit_native, pattern=r"^edit_native:")],
-            EDIT_LEARNING: [CallbackQueryHandler(edit_learning, pattern=r"^edit_learning:")],
+            EDIT_NATIVE: [
+                CallbackQueryHandler(edit_show_all_native, pattern=r"^edit_native_more$"),
+                CallbackQueryHandler(edit_native, pattern=r"^edit_native:"),
+            ],
+            EDIT_LEARNING: [
+                CallbackQueryHandler(edit_show_all_learning, pattern=r"^edit_learning_more$"),
+                CallbackQueryHandler(edit_learning, pattern=r"^edit_learning:"),
+            ],
             EDIT_LEVEL: [CallbackQueryHandler(edit_level, pattern=r"^edit_level:")],
             EDIT_GENDER: [CallbackQueryHandler(edit_gender, pattern=r"^edit_gender:")],
             EDIT_INTERESTS: [
