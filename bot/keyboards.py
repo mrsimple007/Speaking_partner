@@ -97,6 +97,14 @@ def main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(rows)
 
+def find_and_settings_keyboard(lang: str) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(t("menu_find_partner", lang), callback_data="menu:find")],
+        [InlineKeyboardButton(t("menu_premium", lang), callback_data="menu:premium")],
+        [InlineKeyboardButton(t("menu_settings", lang), callback_data="menu:settings")],
+    ]
+    return InlineKeyboardMarkup(rows)
+
 
 def cancel_search_keyboard(lang: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(

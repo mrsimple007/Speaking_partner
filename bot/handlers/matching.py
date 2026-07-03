@@ -80,19 +80,22 @@ async def _create_match_and_notify(context, user_a, user_b):
 async def _notify_match(context, recipient, partner):
     lang = recipient.get("ui_language", "en")
 
-    await context.bot.send_message(
-        chat_id=recipient["telegram_id"],
-        text=f"👤 Partner: {random.choice(_GREETINGS)}",
-    )
-    await asyncio.sleep(random.uniform(5, 6))
-
     interests = db.get_user_interests(partner["id"])
     interests_str = ", ".join(interest_name(c, lang) for c in interests) or "-"
     text = t("partner_found", lang, learning=language_name(partner["learning_language"], lang),
              level=partner["level"], interests=interests_str)
+
+    # 1. Send "partner found" first
     await context.bot.send_message(
         chat_id=recipient["telegram_id"], text=text,
         reply_markup=keyboards.chat_controls_keyboard(lang),
+    )
+
+    # 2. Wait, then simulate partner saying hi
+    await asyncio.sleep(random.uniform(5, 6))
+    await context.bot.send_message(
+        chat_id=recipient["telegram_id"],
+        text=f"👤 Partner: {random.choice(_GREETINGS)}",
     )
 
 async def cancel_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

@@ -129,7 +129,7 @@ TRANSLATIONS = {
         "en": "😔 Your partner left the chat.\n\nNo worries — finding a new one is easy!",
     },
     "searching_new_partner": {
-        "uz": "🔎 Yangi speakingpartner qidirilmoqda...",
+        "uz": "🔎 Yangi Speaking Partner qidirilmoqda...",
         "ru": "🔎 Ищем нового партнёра...",
         "en": "🔎 Searching for another partner...",
     },

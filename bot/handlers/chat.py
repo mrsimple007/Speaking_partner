@@ -65,7 +65,7 @@ async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await context.bot.send_message(
             chat_id=partner_id,
             text=t("partner_left", partner_lang),
-            reply_markup=keyboards.main_menu_keyboard(partner_lang),
+            reply_markup=keyboards.find_and_settings_keyboard(partner_lang),
         )
     except Exception:
         pass
@@ -161,7 +161,7 @@ async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Remove chat control keyboard from this user's last message
     await query.edit_message_reply_markup(reply_markup=None)
     await query.message.reply_text(
-        t("chat_ended_by_you", lang), reply_markup=keyboards.main_menu_keyboard(lang)
+        t("chat_ended_by_you", lang), reply_markup=keyboards.find_and_settings_keyboard(lang)
     )
 
     # Notify partner
@@ -171,7 +171,7 @@ async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await context.bot.send_message(
             chat_id=partner_id,
             text=t("partner_left", partner_lang),
-            reply_markup=keyboards.main_menu_keyboard(partner_lang),
+            reply_markup=keyboards.find_and_settings_keyboard(partner_lang),
         )
     except Exception:
         pass
