@@ -135,8 +135,8 @@ TRANSLATIONS = {
     },
     "not_in_chat": {
         "uz": "ℹ️ Suhbatingiz tugatildi.\n\n Yangi partner topish uchun quyidagi knopkadan foydalaning 🔍",
-        "ru": "ℹ️ Вы сейчас не в чате.\n\nИспользуйте главное меню, чтобы найти партнёра 🔍",
-        "en": "ℹ️ You're not in a chat right now.\n\nUse the main menu to find a partner 🔍",
+        "ru": "ℹ️ Ваш чат завершен.\n\nИспользуйте кнопку, чтобы найти партнёра 🔍",
+        "en": "ℹ️ Your chat is finished.\n\nUse the below button to find a partner 🔍 ",
     },
     "report_reason_prompt": {
         "uz": "🚩 Shikoyat sababini tanlang:",
@@ -248,14 +248,14 @@ TRANSLATIONS = {
         "en": "⚠️ You've already picked 5 interests.\n\nRemove one to add another.",
     },
     "already_in_queue": {
-        "uz": "⏳ Siz allaqachon navbatdasiz.\n\nBiroz kuting, tez orada partner topamiz!",
-        "ru": "⏳ Вы уже в очереди.\n\nНемного подождите, мы скоро найдём вам партнёра!",
-        "en": "⏳ You're already in the queue.\n\nHang tight, we'll find you a partner soon!",
+        "uz": "⏳ Siz allaqachon navbatdasiz.\n\nBiroz kuting, tez orada partner topamiz! Yoki qidiruvni bekor qilish uchun /stop dan foydalaning.",
+        "ru": "⏳ Вы уже в очереди.\n\nНемного подождите, мы скоро найдём вам партнёра! Или используйте /stop, чтобы отменить поиск.",
+        "en": "⏳ You're already in the queue.\n\nHang tight, we'll find you a partner soon! Or use /stop to cancel the search.",
     },
     "already_in_chat": {
-        "uz": "💬 Siz hozir suhbatdasiz.\n\nYangisini boshlash uchun avval joriy suhbatni tugating.",
-        "ru": "💬 Вы сейчас в чате.\n\nЧтобы начать новый, сначала завершите текущий.",
-        "en": "💬 You're currently in a chat.\n\nEnd it first before starting a new one.",
+        "uz": "💬 Siz hozir suhbatdasiz.\n\nYangisini boshlash uchun avval joriy suhbatni tugating. Yoki /stop bosing",
+        "ru": "💬 Вы сейчас в чате.\n\nЧтобы начать новый, сначала завершите текущий. Или используйте /stop",
+        "en": "💬 You're currently in a chat.\n\nEnd it first before starting a new one. Or use /stop",
     },
     "complete_onboarding_first": {
         "uz": "📝 Iltimos, avval profilingizni to'ldiring.\n\nBu bor-yo'g'i 1 daqiqa vaqt oladi!",
