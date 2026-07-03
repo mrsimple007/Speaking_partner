@@ -291,6 +291,35 @@ TRANSLATIONS = {
 },
 
 
+"filters_menu_button": {
+    "uz": "🎛 Premium uchun moslashtirilgan filtrlar",
+    "ru": "🎛 Персональные фильтры",
+    "en": "🎛 Custom Filters",
+},
+"filters_header": {
+    "uz": "🎛 Filtrlaringiz\n\nSizda Premium bor. Shuning uchun bu sozlamalar faqat siz uchun partner tanlashda ishlatiladi.",
+    "ru": "🎛 Ваши фильтры\n\nЭти настройки используются только при подборе партнёра для вас.",
+    "en": "🎛 Your Filters\n\nThese settings are only used when finding a partner for you.",
+},
+"filters_gender_prompt": {
+    "uz": "🧑‍🤝‍🧑 Speaking Partner jinsini tanlang:",
+    "ru": "🧑‍🤝‍🧑 Выберите пол партнёра:",
+    "en": "🧑‍🤝‍🧑 Choose partner gender:",
+},
+"filter_gender_any": {"uz": "🌍 Farqi yo'q", "ru": "🌍 Не важно", "en": "🌍 Any"},
+"filters_interests_prompt": {
+    "uz": "🎯 Umumiy bo'lishi kerak bo'lgan qiziqishlarni tanlang (ixtiyoriy):",
+    "ru": "🎯 Выберите общие интересы (необязательно):",
+    "en": "🎯 Pick interests your partner should share (optional):",
+},
+"filters_saved": {
+    "uz": "✅ Filtrlaringiz saqlandi!",
+    "ru": "✅ Ваши фильтры сохранены!",
+    "en": "✅ Your filters have been saved!",
+},
+
+
+
 }
 
 # ─────────────────────────────────────────────────────────────

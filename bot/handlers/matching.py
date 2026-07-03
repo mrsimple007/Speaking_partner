@@ -5,15 +5,13 @@ from bot import db, keyboards
 from bot.translations import t, language_name, interest_name
 from bot.queue_manager import engine, QueueEntry
 
-
 def _build_queue_entry(user: dict) -> QueueEntry:
     interests = set(db.get_user_interests(user["id"]))
     filter_gender = None
     filter_interests = set()
     if user.get("premium"):
-        prefs = user.get("_premium_filters", {})  # set transiently by premium settings flow
-        filter_gender = prefs.get("gender")
-        filter_interests = set(prefs.get("interests", []))
+        filter_gender = user.get("filter_gender")
+        filter_interests = set(user.get("filter_interests") or [])
     return QueueEntry(
         telegram_id=user["telegram_id"],
         native_language=user["native_language"],
@@ -25,7 +23,6 @@ def _build_queue_entry(user: dict) -> QueueEntry:
         filter_gender=filter_gender,
         filter_interests=filter_interests,
     )
-
 
 async def find_partner_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     telegram_id = update.effective_user.id
@@ -111,14 +108,11 @@ async def cancel_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 async def queue_matchmaking_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Periodic job (registered in main.py JobQueue) that re-scans the
-    waiting queue so two people who joined without a match at insert
-    time can still be paired once a compatible partner appears. The
-    add_to_queue() call already attempts an immediate match on insert;
-    this tick catches edge cases (e.g. both inserted in the same
-    millisecond) and acts as a safety net."""
     async with engine._lock:
         entries = list(engine._queue.values())
+
+    # Premium users get matched first each tick (priority queue)
+    entries.sort(key=lambda e: (not e.premium, e.joined_at))
 
     matched_ids = set()
     for entry in entries:

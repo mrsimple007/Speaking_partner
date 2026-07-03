@@ -127,9 +127,45 @@ def premium_keyboard(lang: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(rows)
 
 
-def settings_keyboard(lang: str) -> InlineKeyboardMarkup:
+def settings_keyboard(lang: str, premium: bool = False) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(t("edit_profile_button", lang), callback_data="settings:edit_profile")],
         [InlineKeyboardButton(t("settings_change_ui_language", lang), callback_data="settings:ui_lang")],
     ]
+    if premium:
+        rows.append(
+            [InlineKeyboardButton(t("filters_menu_button", lang), callback_data="settings:filters")]
+        )
+    return InlineKeyboardMarkup(rows)
+
+
+def filters_gender_keyboard(lang: str, current: str = None) -> InlineKeyboardMarkup:
+    def label(key, text_key):
+        prefix = "✅ " if current == key else ""
+        return prefix + t(text_key, lang)
+
+    rows = [
+        [InlineKeyboardButton(label(None, "filter_gender_any"), callback_data="filter_gender:any")],
+        [
+            InlineKeyboardButton(label("male", "gender_male"), callback_data="filter_gender:male"),
+            InlineKeyboardButton(label("female", "gender_female"), callback_data="filter_gender:female"),
+        ],
+    ]
+    return InlineKeyboardMarkup(rows)
+
+
+def filters_interests_keyboard(lang: str, selected: set) -> InlineKeyboardMarkup:
+    rows = []
+    row = []
+    for code in INTEREST_NAMES.keys():
+        label = interest_name(code, lang)
+        if code in selected:
+            label = "✅ " + label
+        row.append(InlineKeyboardButton(label, callback_data=f"filter_interest:{code}"))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append([InlineKeyboardButton(t("done_button", lang), callback_data="filter_interest_done")])
     return InlineKeyboardMarkup(rows)

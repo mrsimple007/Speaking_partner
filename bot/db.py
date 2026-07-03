@@ -65,6 +65,11 @@ def get_or_create_user(
     return create_user(telegram_id, ui_language, first_name, last_name, username)
 
 
+def set_premium_filters(telegram_id: int, filter_gender, filter_interests: list) -> None:
+    supabase.table("lingo_users").update(
+        {"filter_gender": filter_gender, "filter_interests": filter_interests}
+    ).eq("telegram_id", telegram_id).execute()
+
 
 def update_user(telegram_id: int, fields: dict) -> dict:
     fields["last_active"] = datetime.now(timezone.utc).isoformat()

@@ -57,47 +57,51 @@ class MatchingEngine:
         return telegram_id in self._queue
 
     def _find_best_match(self, entry: QueueEntry) -> "Optional[QueueEntry]":
-        candidates = list(self._queue.values())
+            candidates = list(self._queue.values())
 
-        def passes_filters(a: QueueEntry, b: QueueEntry) -> bool:
-            if a.filter_gender and b.gender != a.filter_gender:
-                return False
-            if b.filter_gender and a.gender != b.filter_gender:
-                return False
-            if a.filter_interests and not (a.filter_interests & b.interests):
-                return False
-            if b.filter_interests and not (b.filter_interests & a.interests):
-                return False
-            return True
+            def passes_filters(a: QueueEntry, b: QueueEntry) -> bool:
+                if a.filter_gender and b.gender != a.filter_gender:
+                    return False
+                if b.filter_gender and a.gender != b.filter_gender:
+                    return False
+                if a.filter_interests and not (a.filter_interests & b.interests):
+                    return False
+                if b.filter_interests and not (b.filter_interests & a.interests):
+                    return False
+                return True
 
-        # Priority 1: native <-> learning exact match
-        for c in candidates:
-            if (
-                c.native_language == entry.learning_language
+            # Priority 1: native <-> learning exact match, premium candidates first
+            exact_matches = [
+                c for c in candidates
+                if c.native_language == entry.learning_language
                 and c.learning_language == entry.native_language
                 and passes_filters(entry, c)
-            ):
-                return c
+            ]
+            if exact_matches:
+                exact_matches.sort(key=lambda c: (not c.premium, c.joined_at))
+                return exact_matches[0]
 
-        # Priority 2: same learning language (language exchange peers)
-        same_learning = [
-            c
-            for c in candidates
-            if c.learning_language == entry.learning_language
-            and c.telegram_id != entry.telegram_id
-            and passes_filters(entry, c)
-        ]
-        if same_learning:
-            # Priority 3: closest level among same_learning
-            order = ["A1", "A2", "B1", "B2", "C1", "C2", "native"]
+            # Priority 2: same learning language (language exchange peers)
+            same_learning = [
+                c
+                for c in candidates
+                if c.learning_language == entry.learning_language
+                and c.telegram_id != entry.telegram_id
+                and passes_filters(entry, c)
+            ]
+            if same_learning:
+                order = ["A1", "A2", "B1", "B2", "C1", "C2", "native"]
 
-            def level_idx(level: str) -> int:
-                return order.index(level) if level in order else len(order) // 2
+                def level_idx(level: str) -> int:
+                    return order.index(level) if level in order else len(order) // 2
 
-            same_learning.sort(key=lambda c: abs(level_idx(c.level) - level_idx(entry.level)))
-            return same_learning[0]
+                # Premium candidates preferred first, then closest level
+                same_learning.sort(
+                    key=lambda c: (not c.premium, abs(level_idx(c.level) - level_idx(entry.level)))
+                )
+                return same_learning[0]
 
-        return None
+            return None
 
     # ---------------- Active chat management ----------------
     async def start_chat(self, telegram_id_a: int, telegram_id_b: int, match_id: int) -> None:
