@@ -4,6 +4,7 @@ Handles message relay between two matched users and in-chat button actions
 """
 from telegram import Update
 from telegram.ext import ContextTypes, CallbackQueryHandler, MessageHandler, filters
+import asyncio
 
 from bot import db, keyboards
 from bot.translations import t
@@ -41,7 +42,7 @@ def priority_relay_handler():
 
 async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en") if user else "en"
 
     chat_info = await engine.end_chat(telegram_id)
@@ -52,14 +53,16 @@ async def stop_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
 
     match_id, partner_id = chat_info["match_id"], chat_info["partner_id"]
-    db.end_match(match_id, "end")
-    db.set_status(telegram_id, "idle")
-    db.set_status(partner_id, "idle")
+    await db.end_match_async(match_id, "end")
+    await asyncio.gather(
+        db.set_status_async(telegram_id, "idle"),
+        db.set_status_async(partner_id, "idle"),
+    )
 
     await update.message.reply_text(
         t("chat_ended_by_you", lang), reply_markup=keyboards.main_menu_keyboard(lang)
     )
-    partner_user = db.get_user_by_telegram_id(partner_id)
+    partner_user = await db.get_user_by_telegram_id_async(partner_id)
     partner_lang = partner_user.get("ui_language", "en") if partner_user else "en"
     try:
         await context.bot.send_message(
@@ -79,7 +82,7 @@ async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     chat_info = engine.get_chat(telegram_id)
 
     if not chat_info:
-        user = db.get_user_by_telegram_id(telegram_id)
+        user = await db.get_user_by_telegram_id_async(telegram_id)
         if user:
             lang = user.get("ui_language", "en")
             await update.message.reply_text(
@@ -92,9 +95,9 @@ async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     await typing(context, partner_id)
 
 
-    user = db.get_user_by_telegram_id(telegram_id)
-    db.log_message(match_id, user["id"])
-    db.touch_last_active(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
+    await db.log_message_async(match_id, user["id"])
+    await db.touch_last_active_async(telegram_id)
 
     msg = update.message
     try:
@@ -138,7 +141,7 @@ async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en")
 
     chat_info = await engine.end_chat(telegram_id)
@@ -150,13 +153,14 @@ async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     match_id = chat_info["match_id"]
+    partner_id = chat_info["partner_id"]
     await typing(context, partner_id)
 
-    partner_id = chat_info["partner_id"]
-
-    db.end_match(match_id, "end")
-    db.set_status(telegram_id, "idle")
-    db.set_status(partner_id, "idle")
+    await db.end_match_async(match_id, "end")
+    await asyncio.gather(
+        db.set_status_async(telegram_id, "idle"),
+        db.set_status_async(partner_id, "idle"),
+    )
 
     # Remove chat control keyboard from this user's last message
     await query.edit_message_reply_markup(reply_markup=None)
@@ -165,7 +169,7 @@ async def end_chat(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
     # Notify partner
-    partner_user = db.get_user_by_telegram_id(partner_id)
+    partner_user = await db.get_user_by_telegram_id_async(partner_id)
     partner_lang = partner_user.get("ui_language", "en") if partner_user else "en"
     try:
         await context.bot.send_message(
@@ -184,7 +188,7 @@ async def next_partner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     query = update.callback_query
     await query.answer()
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en")
 
     chat_info = await engine.end_chat(telegram_id)
@@ -193,14 +197,11 @@ async def next_partner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         partner_id = chat_info["partner_id"]
 
         await typing(context, partner_id)
-
-        partner_id = chat_info["partner_id"]
-
-        db.end_match(match_id, "next")
-        db.set_status(partner_id, "idle")
+        await db.end_match_async(match_id, "next")
+        await db.set_status_async(partner_id, "idle")
 
         # Notify old partner that this user left
-        partner_user = db.get_user_by_telegram_id(partner_id)
+        partner_user = await db.get_user_by_telegram_id_async(partner_id)
         if partner_user:
             partner_lang = partner_user.get("ui_language", "en")
             try:
@@ -216,12 +217,12 @@ async def next_partner(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     await query.message.reply_text(t("searching_new_partner", lang))
 
     # Re-queue this user immediately
-    db.set_status(telegram_id, "searching")
-    entry = _build_queue_entry(user)
+    await db.set_status_async(telegram_id, "searching")
+    entry = await _build_queue_entry(user)
     partner_entry = await engine.add_to_queue(entry)
 
     if partner_entry:
-        partner_user = db.get_user_by_telegram_id(partner_entry.telegram_id)
+        partner_user = await db.get_user_by_telegram_id_async(partner_entry.telegram_id)
         await _create_match_and_notify(context, user, partner_user)
     else:
         await query.message.reply_text(
@@ -236,7 +237,7 @@ async def report_prompt(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     query = update.callback_query
     await query.answer()
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en")
 
     chat_info = engine.get_chat(telegram_id)
@@ -257,7 +258,7 @@ async def submit_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     query = update.callback_query
     await query.answer()
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en")
 
     reason = query.data.split(":")[1]
@@ -265,9 +266,9 @@ async def submit_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     match_id = context.user_data.pop("report_match_id", None)
 
     if partner_telegram_id:
-        partner_user = db.get_user_by_telegram_id(partner_telegram_id)
+        partner_user = await db.get_user_by_telegram_id_async(partner_telegram_id)
         if partner_user:
-            db.create_report(
+            await db.create_report_async(
                 reporter_id=user["id"],
                 reported_id=partner_user["id"],
                 reason=reason,
@@ -279,14 +280,13 @@ async def submit_report(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     # After report, end the chat and return to menu
     chat_info = await engine.end_chat(telegram_id)
     if chat_info:
-        db.end_match(chat_info["match_id"], "report")
-        db.set_status(telegram_id, "idle")
-        match_id = chat_info["match_id"]
+        await db.end_match_async(chat_info["match_id"], "report")
+        await db.set_status_async(telegram_id, "idle")
 
         partner_id = chat_info["partner_id"]
-        db.set_status(partner_id, "idle")
+        await db.set_status_async(partner_id, "idle")
         try:
-            partner_user = db.get_user_by_telegram_id(partner_id)
+            partner_user = await db.get_user_by_telegram_id_async(partner_id)
             if partner_user:
                 partner_lang = partner_user.get("ui_language", "en")
                 await context.bot.send_message(

@@ -5,8 +5,8 @@ from bot import db, keyboards
 from bot.translations import t, language_name, interest_name
 from bot.queue_manager import engine, QueueEntry
 
-def _build_queue_entry(user: dict) -> QueueEntry:
-    interests = set(db.get_user_interests(user["id"]))
+async def _build_queue_entry(user: dict) -> QueueEntry:
+    interests = set(await db.get_user_interests_async(user["id"]))
     filter_gender = None
     filter_interests = set()
     if user.get("premium"):
@@ -26,7 +26,7 @@ def _build_queue_entry(user: dict) -> QueueEntry:
 
 async def find_partner_entry(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en")
 
     if not user.get("native_language") or not user.get("learning_language"):
@@ -41,12 +41,12 @@ async def find_partner_entry(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.callback_query.message.reply_text(t("already_in_queue", lang))
         return
 
-    db.set_status(telegram_id, "searching")
+    await db.set_status_async(telegram_id, "searching")
     msg = await update.callback_query.message.reply_text(
         t("searching", lang), reply_markup=keyboards.cancel_search_keyboard(lang)
     )
 
-    entry = _build_queue_entry(user)
+    entry = await _build_queue_entry(user)
     partner_entry = await engine.add_to_queue(entry)
 
     if partner_entry is None:
@@ -56,7 +56,7 @@ async def find_partner_entry(update: Update, context: ContextTypes.DEFAULT_TYPE)
         return
 
     # Immediate match
-    partner_user = db.get_user_by_telegram_id(partner_entry.telegram_id)
+    partner_user = await db.get_user_by_telegram_id_async(partner_entry.telegram_id)
     await _create_match_and_notify(context, user, partner_user)
 
 
@@ -66,11 +66,13 @@ import random
 _GREETINGS = ["hi", "hello", "hey 👋", "hi there!", "hello 😊"]
 
 async def _create_match_and_notify(context, user_a, user_b):
-    match = db.create_match(user_a["id"], user_b["id"])
+    match = await db.create_match_async(user_a["id"], user_b["id"])
     await engine.start_chat(user_a["telegram_id"], user_b["telegram_id"], match["id"])
 
-    db.set_status(user_a["telegram_id"], "chatting")
-    db.set_status(user_b["telegram_id"], "chatting")
+    await asyncio.gather(
+        db.set_status_async(user_a["telegram_id"], "chatting"),
+        db.set_status_async(user_b["telegram_id"], "chatting"),
+    )
 
     await asyncio.gather(
         _notify_match(context, user_a, user_b),
@@ -80,7 +82,7 @@ async def _create_match_and_notify(context, user_a, user_b):
 async def _notify_match(context, recipient, partner):
     lang = recipient.get("ui_language", "en")
 
-    interests = db.get_user_interests(partner["id"])
+    interests = await db.get_user_interests_async(partner["id"])
     interests_str = ", ".join(interest_name(c, lang) for c in interests) or "-"
     text = t("partner_found", lang, learning=language_name(partner["learning_language"], lang),
              level=partner["level"], interests=interests_str)
@@ -102,11 +104,11 @@ async def cancel_search(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     query = update.callback_query
     await query.answer()
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en")
 
     await engine.remove_from_queue(telegram_id)
-    db.set_status(telegram_id, "idle")
+    await db.set_status_async(telegram_id, "idle")
     context.bot_data.setdefault("waiting_messages", {}).pop(telegram_id, None)
 
     await query.edit_message_text(t("search_cancelled", lang))
@@ -124,7 +126,11 @@ async def queue_matchmaking_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
     entries.sort(key=lambda e: (not e.premium, e.joined_at))
     matched_ids = set()
     now = time()
+    pairs = []
 
+    # First pass: purely in-memory pairing under the lock. No DB or
+    # network calls happen here, so the lock is held only briefly and
+    # this loop can't be slowed down by Supabase/Telegram latency.
     for entry in entries:
         if entry.telegram_id in matched_ids:
             continue
@@ -150,11 +156,23 @@ async def queue_matchmaking_tick(context: ContextTypes.DEFAULT_TYPE) -> None:
 
         matched_ids.add(entry.telegram_id)
         matched_ids.add(partner.telegram_id)
+        pairs.append((entry, partner))
 
-        user_a = db.get_user_by_telegram_id(entry.telegram_id)
-        user_b = db.get_user_by_telegram_id(partner.telegram_id)
+    if not pairs:
+        return
+
+    # Second pass: all the slow work (DB lookups, Telegram sends, the
+    # simulated-greeting sleep) happens outside the lock and concurrently
+    # across pairs, instead of sequentially blocking the whole tick.
+    async def _resolve_and_notify(entry, partner):
+        user_a, user_b = await asyncio.gather(
+            db.get_user_by_telegram_id_async(entry.telegram_id),
+            db.get_user_by_telegram_id_async(partner.telegram_id),
+        )
         if user_a and user_b:
             await _create_match_and_notify(context, user_a, user_b)
+
+    await asyncio.gather(*(_resolve_and_notify(e, p) for e, p in pairs))
 
 def matching_handlers() -> list:
     return [CallbackQueryHandler(cancel_search, pattern=r"^search:cancel$")]

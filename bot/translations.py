@@ -79,7 +79,7 @@ TRANSLATIONS = {
         "en": "⚙️ Settings",
     },
     "searching": {
-        "uz": "🔎 partner qidirilmoqda...\n\n⏱ O'rtacha kutish vaqti: ~30 soniya\n🔔 Topilgan zahoti avtomatik ulanasiz.\n\nBiroz sabr qiling 🙂",
+        "uz": "🔎 Partner qidirilmoqda...\n\n⏱ O'rtacha kutish vaqti: ~30 soniya\n🔔 Topilgan zahoti avtomatik ulanasiz.\n\nBiroz sabr qiling 🙂",
         "ru": "🔎 Ищем для вас партнёра...\n\n⏱ Среднее время ожидания: ~30 секунд\n🔔 Как только найдём — подключим вас автоматически.\n\nЧуть-чуть терпения 🙂",
         "en": "🔎 Looking for a partner...\n\n⏱ Average wait time: ~30 seconds\n🔔 You'll be connected automatically the moment we find one.\n\nHang tight 🙂",
     },

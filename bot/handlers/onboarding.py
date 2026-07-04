@@ -26,8 +26,13 @@ CHOOSING_UI_LANG, NATIVE_LANG, LEARNING_LANG, LEVEL, GENDER, INTERESTS = range(6
 async def _notify_admins_new_user(context, telegram_id: int, tg_user) -> None:
     """Send a short new-user card to all notification admins."""
     try:
-        # Count total users
-        total = db.supabase.table("lingo_users").select("id", count="exact").execute().count or "?"
+        # Count total users (blocking Supabase call -> off the event loop thread)
+        import asyncio
+
+        def _count_users():
+            return db.supabase.table("lingo_users").select("id", count="exact").execute().count
+
+        total = await asyncio.to_thread(_count_users) or "?"
 
         username = tg_user.username
         name     = tg_user.full_name or f"User_{telegram_id}"
@@ -63,7 +68,7 @@ async def _notify_admins_new_user(context, telegram_id: int, tg_user) -> None:
 # ───────────────────────────────────────────────────────────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     telegram_id = update.effective_user.id
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
 
     if user and user.get("onboarding_step") is None:
         # Already onboarded → go straight to main menu
@@ -79,7 +84,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     )
 
     if is_new:
-        await _notify_admins_new_user(context, telegram_id, update.effective_user)
+        import asyncio
+        # Fire-and-forget: admin notification shouldn't delay the new
+        # user's onboarding flow.
+        asyncio.create_task(_notify_admins_new_user(context, telegram_id, update.effective_user))
 
     return CHOOSING_UI_LANG
 
@@ -94,9 +102,9 @@ async def choose_ui_language(update: Update, context: ContextTypes.DEFAULT_TYPE)
     telegram_id = update.effective_user.id
     tg_user = update.effective_user
 
-    user = db.get_user_by_telegram_id(telegram_id)
+    user = await db.get_user_by_telegram_id_async(telegram_id)
     if not user:
-        user = db.create_user(
+        user = await db.create_user_async(
             telegram_id,
             ui_language=lang,
             first_name=tg_user.first_name or "",
@@ -105,7 +113,7 @@ async def choose_ui_language(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         logger.info("New user created: telegram_id=%s ui_language=%s", telegram_id, lang)
     else:
-        db.update_user(telegram_id, {"ui_language": lang})
+        await db.update_user_async(telegram_id, {"ui_language": lang})
         logger.info("Existing user updated ui_language: telegram_id=%s -> %s", telegram_id, lang)
 
     context.user_data["ui_language"] = lang
@@ -232,7 +240,7 @@ async def finish_interests(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     lang        = context.user_data.get("ui_language", "en")
     telegram_id = update.effective_user.id
 
-    user = db.update_user(
+    user = await db.update_user_async(
         telegram_id,
         {
             "native_language":   context.user_data.get("native_language"),
@@ -243,7 +251,7 @@ async def finish_interests(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             "status":            "idle",
         },
     )
-    db.set_user_interests(user["id"], list(context.user_data.get("interests_selected", set())))
+    await db.set_user_interests_async(user["id"], list(context.user_data.get("interests_selected", set())))
 
     logger.info(
         "Onboarding completed: telegram_id=%s native=%s learning=%s level=%s",

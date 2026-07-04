@@ -4,6 +4,7 @@ All functions are sync (supabase-py is sync); they're called from
 async handlers via run_in_executor where needed, but for MVP scale
 we just call them directly (PostgREST calls are fast enough).
 """
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -260,3 +261,54 @@ def activate_premium(telegram_id: int, days: int) -> None:
 def get_admin_stats() -> dict:
     res = supabase.table("lingo_admin_stats").select("*").limit(1).execute()
     return res.data[0] if res.data else {}
+
+
+# ---------------------------------------------------------------
+# ASYNC WRAPPERS
+# ---------------------------------------------------------------
+# supabase-py is a *synchronous* client. Every function above does a
+# blocking network round-trip. Calling them directly from an async
+# handler blocks the single-threaded event loop, which means ONE
+# user's DB call stalls every other user's messages/button presses
+# until it returns. That's the #1 cause of the bot slowing down
+# under concurrent load.
+#
+# These wrappers push the blocking call onto a worker thread via
+# asyncio.to_thread, so the event loop stays free to handle other
+# updates while the network call is in flight. Handlers should
+# `await db.<name>_async(...)` instead of calling the sync version
+# directly wherever they're inside an async def.
+def _make_async(fn):
+    async def wrapper(*args, **kwargs):
+        return await asyncio.to_thread(fn, *args, **kwargs)
+    wrapper.__name__ = f"{fn.__name__}_async"
+    return wrapper
+
+
+get_user_by_telegram_id_async = _make_async(get_user_by_telegram_id)
+create_user_async = _make_async(create_user)
+get_or_create_user_async = _make_async(get_or_create_user)
+set_premium_filters_async = _make_async(set_premium_filters)
+update_user_async = _make_async(update_user)
+touch_last_active_async = _make_async(touch_last_active)
+set_status_async = _make_async(set_status)
+delete_user_async = _make_async(delete_user)
+
+get_all_interests_async = _make_async(get_all_interests)
+set_user_interests_async = _make_async(set_user_interests)
+get_user_interests_async = _make_async(get_user_interests)
+
+create_match_async = _make_async(create_match)
+end_match_async = _make_async(end_match)
+log_message_async = _make_async(log_message)
+
+create_report_async = _make_async(create_report)
+
+create_payment_async = _make_async(create_payment)
+attach_payment_proof_async = _make_async(attach_payment_proof)
+confirm_payment_async = _make_async(confirm_payment)
+reject_payment_async = _make_async(reject_payment)
+get_pending_payment_for_user_async = _make_async(get_pending_payment_for_user)
+activate_premium_async = _make_async(activate_premium)
+
+get_admin_stats_async = _make_async(get_admin_stats)
