@@ -362,6 +362,21 @@ TRANSLATIONS = {
     "ru": "🏆 Рейтинг пока пуст. Станьте первым, кто пригласит друзей!",
     "en": "🏆 The leaderboard is empty so far. Be the first to invite some friends!",
 },
+"share_with_friends_button": {
+    "uz": "📤 Do'stlarga yuborish",
+    "ru": "📤 Отправить другу",
+    "en": "📤 Send to Friends",
+},
+"referral_self_notice": {
+    "uz": "😊 O'zingizni taklif qilib ko'rish ajoyib, lekin taklif faqat siz uni do'stlaringizga yuborganingizda hisoblanadi!\n\nHavolangizni olish uchun /invite ni bosing va \"📤 Do'stlarga yuborish\" tugmasi orqali ulashing 🚀",
+    "ru": "😊 Приятно, что вы попробовали свою же ссылку, но приглашение засчитывается, только если вы отправите её другу!\n\nОткройте /invite и поделитесь ссылкой через кнопку «📤 Отправить другу» 🚀",
+    "en": "😊 It's great that you tried your own link — but a referral only counts once you send it to a friend!\n\nOpen /invite and use the \"📤 Send to Friends\" button to share it 🚀",
+},
+"referral_already_registered": {
+    "uz": "✅ Siz allaqachon LingoMatch a'zosisiz, shuning uchun bu havola siz uchun hisoblanmaydi.\n\nAsosiy menyuga xush kelibsiz!",
+    "ru": "✅ Вы уже зарегистрированы в LingoMatch, поэтому эта ссылка не засчитывается для вас.\n\nДобро пожаловать в главное меню!",
+    "en": "✅ You're already a LingoMatch member, so this link can't be counted for you.\n\nWelcome back to the main menu!",
+},
 
 
 }

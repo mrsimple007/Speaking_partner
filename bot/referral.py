@@ -33,10 +33,12 @@ How a "successful" referral gets counted
    is what makes a referral "successful" per the announcement, and
    `record_referral` itself is idempotent so retries can't double-count.
 """
+from urllib.parse import quote
+
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
-from bot import db
+from bot import db, keyboards
 from bot.translations import t
 from bot.referrals import get_badge
 
@@ -69,11 +71,21 @@ async def show_invite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         badge=_badge_line(lang, count),
     )
 
+    # "Send to Friends" button opens Telegram's native share sheet via
+    # the t.me/share/url deep link, pre-filled with this exact message
+    # so sharing is one tap instead of copy-pasting the link by hand.
+    share_url = f"https://t.me/share/url?url={quote(link, safe='')}&text={quote(text, safe='')}"
+    keyboard = keyboards.share_referral_keyboard(lang, share_url)
+
     if update.callback_query:
         await update.callback_query.answer()
-        await update.callback_query.message.reply_text(text, disable_web_page_preview=True)
+        await update.callback_query.message.reply_text(
+            text, disable_web_page_preview=True, reply_markup=keyboard
+        )
     else:
-        await update.message.reply_text(text, disable_web_page_preview=True)
+        await update.message.reply_text(
+            text, disable_web_page_preview=True, reply_markup=keyboard
+        )
 
 
 async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -101,6 +113,7 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 def referral_handlers() -> list:
     return [
-        CommandHandler("share", show_invite),
+        CommandHandler("invite", show_invite),
+        CommandHandler("share", show_invite),  # alias — same link/badge card as /invite
         CommandHandler("leaderboard", leaderboard_command),
     ]

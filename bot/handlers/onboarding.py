@@ -71,9 +71,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = await db.get_user_by_telegram_id_async(telegram_id)
 
     if user and user.get("onboarding_step") is None:
-        # Already onboarded → go straight to main menu
+        # Already onboarded. A referral link can never be counted for
+        # an existing member — but rather than silently ignoring the
+        # tap, tell them why, so "why didn't my referral count" isn't
+        # a mystery.
+        lang = user.get("ui_language", "en")
+        args = context.args
+        if args and args[0].startswith("ref_"):
+            code = args[0][len("ref_"):]
+            own_code = user.get("referral_code")
+            if own_code and code == own_code:
+                await update.message.reply_text(t("referral_self_notice", lang))
+            else:
+                await update.message.reply_text(t("referral_already_registered", lang))
+
         from bot.handlers.menu import show_main_menu
-        await show_main_menu(update, context, user["ui_language"])
+        await show_main_menu(update, context, lang)
         return ConversationHandler.END
 
     # Referral deep link: /start ref_<CODE>. Stashed now, resolved and

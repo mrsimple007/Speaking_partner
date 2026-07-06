@@ -98,6 +98,15 @@ def main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     ]
     return InlineKeyboardMarkup(rows)
 
+
+def share_referral_keyboard(lang: str, share_url: str) -> InlineKeyboardMarkup:
+    """Single button that opens Telegram's native 'forward to a chat'
+    sheet via the t.me/share/url deep link, pre-filled with the user's
+    invite message so they can send it to a friend in one tap."""
+    return InlineKeyboardMarkup(
+        [[InlineKeyboardButton(t("share_with_friends_button", lang), url=share_url)]]
+    )
+
 def find_and_settings_keyboard(lang: str) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(t("menu_find_partner", lang), callback_data="menu:find")],
