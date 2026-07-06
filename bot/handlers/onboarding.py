@@ -159,7 +159,7 @@ async def choose_native_language(update: Update, context: ContextTypes.DEFAULT_T
 
     await query.edit_message_text(
         t("ask_learning_language", lang),
-        reply_markup=keyboards.language_keyboard(lang, "learning"),
+        reply_markup=keyboards.language_keyboard(lang, "learning", show_all=True),
     )
     return LEARNING_LANG
 
@@ -204,13 +204,6 @@ async def show_all_native(update, context):
     lang = context.user_data.get("ui_language", "en")
     await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "native", show_all=True))
     return NATIVE_LANG
-
-async def show_all_learning(update, context):
-    query = update.callback_query
-    await query.answer()
-    lang = context.user_data.get("ui_language", "en")
-    await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "learning", show_all=True))
-    return LEARNING_LANG
 
 
 # ───────────────────────────────────────────────────────────────
@@ -264,11 +257,14 @@ async def _resolve_referral(context: ContextTypes.DEFAULT_TYPE, new_user: dict) 
     try:
         referrer = await db.get_user_by_referral_code_async(code)
         if referrer:
-            await db.record_referral_async(referrer["id"], new_user["id"])
-            logger.info(
-                "Referral recorded: referrer_id=%s referred_id=%s code=%s",
-                referrer["id"], new_user["id"], code,
-            )
+            recorded = await db.record_referral_async(referrer["id"], new_user["id"])
+            if recorded:
+                logger.info(
+                    "Referral recorded: referrer_id=%s referred_id=%s code=%s",
+                    referrer["id"], new_user["id"], code,
+                )
+                from bot.referral import notify_referral_success
+                await notify_referral_success(context, referrer, new_user)
     except Exception:
         # Never let a referral hiccup break onboarding for the new user.
         logger.exception("Failed to resolve/record referral code=%s", code)
@@ -317,17 +313,16 @@ def build_onboarding_conversation() -> ConversationHandler:
         entry_points=[CommandHandler("start", start)],
         states={
             CHOOSING_UI_LANG: [CallbackQueryHandler(choose_ui_language, pattern=r"^ui_lang:")],
-            NATIVE_LANG:      [CallbackQueryHandler(choose_native_language, pattern=r"^native:")],
+            NATIVE_LANG: [
+                CallbackQueryHandler(choose_native_language, pattern=r"^native:"),
+                CallbackQueryHandler(show_all_native, pattern=r"^native_more$"),
+            ],
             LEARNING_LANG:    [CallbackQueryHandler(choose_learning_language, pattern=r"^learning:")],
             LEVEL:            [CallbackQueryHandler(choose_level, pattern=r"^level:")],
             GENDER:           [CallbackQueryHandler(choose_gender, pattern=r"^gender:")],
             INTERESTS: [
                 CallbackQueryHandler(finish_interests, pattern=r"^interest_done$"),
                 CallbackQueryHandler(toggle_interest,  pattern=r"^interest:"),
-                CallbackQueryHandler(show_all_native, pattern=r"^native_more$"),
-                CallbackQueryHandler(show_all_learning, pattern=r"^learning_more$"),
-                CallbackQueryHandler(choose_learning_language, pattern=r"^learning:"),
-
             ],
         },
         fallbacks=[CommandHandler("start", start)],

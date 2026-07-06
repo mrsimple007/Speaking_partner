@@ -30,23 +30,6 @@ def ui_language_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(rows)
 
 
-def language_keyboard(lang: str, prefix: str) -> InlineKeyboardMarkup:
-    """
-    Two languages per row with flag + name, e.g. '🇬🇧 English'.
-    Signature unchanged (lang, prefix) so existing call sites keep working.
-    """
-    rows = []
-    row = []
-    for code in LANGUAGE_OPTIONS:
-        row.append(InlineKeyboardButton(language_label(code, lang), callback_data=f"{prefix}:{code}"))
-        if len(row) == 2:
-            rows.append(row)
-            row = []
-    if row:
-        rows.append(row)
-    return InlineKeyboardMarkup(rows)
-
-
 def level_keyboard(lang: str, prefix: str = "level") -> InlineKeyboardMarkup:
     rows = []
     row = []
@@ -105,6 +88,18 @@ def share_referral_keyboard(lang: str, share_url: str) -> InlineKeyboardMarkup:
     invite message so they can send it to a friend in one tap."""
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton(t("share_with_friends_button", lang), url=share_url)]]
+    )
+
+
+def referral_success_keyboard(lang: str, share_url: str) -> InlineKeyboardMarkup:
+    """Shown on both the 'your referral joined' and 'you joined via
+    referral' notifications: keep the sharing loop going, or jump
+    straight into finding a partner."""
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton(t("share_with_friends_button", lang), url=share_url)],
+            [InlineKeyboardButton(t("menu_find_partner", lang), callback_data="menu:find")],
+        ]
     )
 
 def find_and_settings_keyboard(lang: str) -> InlineKeyboardMarkup:

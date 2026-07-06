@@ -1,37 +1,24 @@
 """
-Referral program handlers: personal invite links, badge display, and
-the public /leaderboard.
+Referral program handlers: personal invite links, badge display, the
+public /leaderboard, and the success notifications sent to both sides
+of a completed referral.
 
 How a "successful" referral gets counted
 -----------------------------------------
-1. User A opens Invite Friends (menu button) or runs /invite and gets
-       https://t.me/<bot_username>?start=ref_<CODE>
+1. User A opens Invite Friends (menu button) or runs /invite/share and
+   gets   https://t.me/<bot_username>?start=ref_<CODE>
 2. User B taps the link — Telegram delivers `/start ref_<CODE>` to the
-   bot, which lands in the onboarding ConversationHandler's entry
-   point (bot/handlers/onboarding.py).
-3. That entry point needs two small additions (not in this file, since
-   onboarding.py wasn't part of this changeset — see the two snippets
-   below):
+   bot, which is captured and, once B *finishes* onboarding, resolved
+   and recorded via db.record_referral_async (see onboarding.py's
+   start() and _resolve_referral()).
+3. The moment that recording succeeds, onboarding.py calls
+   notify_referral_success() below, which pings A ("your friend joined!")
+   and B ("welcome, here's your own link") — each with Share + Find
+   Partner buttons so the loop keeps going.
 
-   a) On /start, stash the code for later:
-
-        args = context.args
-        if args and args[0].startswith("ref_"):
-            context.user_data["referral_code"] = args[0][len("ref_"):]
-
-   b) Once B *finishes* onboarding (profile + interests saved, right
-      before "interests_saved" is shown), resolve and record it:
-
-        from bot import db
-        code = context.user_data.pop("referral_code", None)
-        if code:
-            referrer = await db.get_user_by_referral_code_async(code)
-            if referrer:
-                await db.record_referral_async(referrer["id"], new_user["id"])
-
-   Counting only on *completed* onboarding (not on the raw /start tap)
-   is what makes a referral "successful" per the announcement, and
-   `record_referral` itself is idempotent so retries can't double-count.
+Counting only on *completed* onboarding (not the raw /start tap) is
+what makes a referral "successful," and record_referral is idempotent
+so a retried call can't double-notify.
 """
 from urllib.parse import quote
 
@@ -51,6 +38,20 @@ def _badge_line(lang: str, count: int) -> str:
     return f"{emoji} {t(name_key, lang)}"
 
 
+def _invite_link(bot_username: str, code: str) -> str:
+    return f"https://t.me/{bot_username}?start=ref_{code}"
+
+
+def _invite_text(lang: str, link: str, count: int) -> str:
+    return t("invite_header", lang, link=link, count=count, badge=_badge_line(lang, count))
+
+
+def _share_url(link: str, text: str) -> str:
+    # Opens Telegram's native "forward to a chat" sheet, pre-filled
+    # with the given text (which already contains the link).
+    return f"https://t.me/share/url?url={quote(link, safe='')}&text={quote(text, safe='')}"
+
+
 async def show_invite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     telegram_id = update.effective_user.id
     user = await db.get_user_by_telegram_id_async(telegram_id)
@@ -60,22 +61,11 @@ async def show_invite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     code = await db.ensure_referral_code_async(telegram_id)
     me = await context.bot.get_me()
-    link = f"https://t.me/{me.username}?start=ref_{code}"
+    link = _invite_link(me.username, code)
 
     count = user.get("referral_count", 0) or 0
-    text = t(
-        "invite_header",
-        lang,
-        link=link,
-        count=count,
-        badge=_badge_line(lang, count),
-    )
-
-    # "Send to Friends" button opens Telegram's native share sheet via
-    # the t.me/share/url deep link, pre-filled with this exact message
-    # so sharing is one tap instead of copy-pasting the link by hand.
-    share_url = f"https://t.me/share/url?url={quote(link, safe='')}&text={quote(text, safe='')}"
-    keyboard = keyboards.share_referral_keyboard(lang, share_url)
+    text = _invite_text(lang, link, count)
+    keyboard = keyboards.share_referral_keyboard(lang, _share_url(link, text))
 
     if update.callback_query:
         await update.callback_query.answer()
@@ -86,6 +76,69 @@ async def show_invite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text(
             text, disable_web_page_preview=True, reply_markup=keyboard
         )
+
+
+async def notify_referral_success(context: ContextTypes.DEFAULT_TYPE, referrer: dict, new_user: dict) -> None:
+    """Called exactly once, right after a referral is newly recorded
+    (see onboarding.py's _resolve_referral). Notifies both sides:
+
+      - the referrer, that their friend joined + a fresh share link
+        reflecting their bumped-up count
+      - the new joiner, welcoming them + handing them their own
+        referral link so the chain keeps going
+
+    Both messages get the same Share + Find Partner buttons. Best-effort:
+    a failed send here (e.g. the referrer blocked the bot) never bubbles
+    up and breaks the new user's onboarding.
+    """
+    me = await context.bot.get_me()
+
+    # --- tell the referrer ---
+    try:
+        referrer_lang = referrer.get("ui_language", "en")
+        referrer_code = referrer.get("referral_code") or await db.ensure_referral_code_async(
+            referrer["telegram_id"]
+        )
+        referrer_link = _invite_link(me.username, referrer_code)
+        # referral_count in `referrer` was fetched before record_referral
+        # incremented it — bump locally so the share card is accurate
+        # without an extra DB round trip.
+        updated_count = (referrer.get("referral_count") or 0) + 1
+        friend_name = (
+            new_user.get("first_name") or new_user.get("username") or t("referral_someone", referrer_lang)
+        )
+
+        referrer_text = t("referral_success_referrer", referrer_lang, name=friend_name)
+        referrer_share_text = _invite_text(referrer_lang, referrer_link, updated_count)
+        referrer_keyboard = keyboards.referral_success_keyboard(
+            referrer_lang, _share_url(referrer_link, referrer_share_text)
+        )
+        await context.bot.send_message(
+            chat_id=referrer["telegram_id"],
+            text=referrer_text,
+            reply_markup=referrer_keyboard,
+        )
+    except Exception:
+        pass
+
+    # --- welcome the new joiner ---
+    try:
+        joiner_lang = new_user.get("ui_language", "en")
+        joiner_code = await db.ensure_referral_code_async(new_user["telegram_id"])
+        joiner_link = _invite_link(me.username, joiner_code)
+
+        joiner_text = t("referral_welcome_joined", joiner_lang, link=joiner_link)
+        joiner_share_text = _invite_text(joiner_lang, joiner_link, 0)
+        joiner_keyboard = keyboards.referral_success_keyboard(
+            joiner_lang, _share_url(joiner_link, joiner_share_text)
+        )
+        await context.bot.send_message(
+            chat_id=new_user["telegram_id"],
+            text=joiner_text,
+            reply_markup=joiner_keyboard,
+        )
+    except Exception:
+        pass
 
 
 async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

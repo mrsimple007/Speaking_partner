@@ -353,7 +353,7 @@ TRANSLATIONS = {
 },
 "badge_legend": {"uz": "👑 Afsona", "ru": "👑 Легенда", "en": "👑 Legend"},
 "leaderboard_header": {
-    "uz": "🏆 Eng faol takliflovchilar",
+    "uz": "🏆 Eng faol til o'rganuvchilar",
     "ru": "🏆 Топ пригласивших",
     "en": "🏆 Top Referrers",
 },
@@ -377,6 +377,17 @@ TRANSLATIONS = {
     "ru": "✅ Вы уже зарегистрированы в LingoMatch, поэтому эта ссылка не засчитывается для вас.\n\nДобро пожаловать в главное меню!",
     "en": "✅ You're already a LingoMatch member, so this link can't be counted for you.\n\nWelcome back to the main menu!",
 },
+"referral_success_referrer": {
+    "uz": "🎉 Do'stingiz {name} sizning taklif havolangiz orqali LingoMatch'ga qo'shildi! Zo'r ish qildingiz 🙌\n\nEng yaxshi til o'rganuvchilarni ko'rish uchun /leaderboard buyrug'ini yuboring.",
+    "ru": "🎉 Ваш друг {name} присоединился к LingoMatch по вашей реферальной ссылке! Отличная работа 🙌\n\nПосмотрите лучших изучающих языки через /leaderboard.",
+    "en": "🎉 Your friend {name} just joined LingoMatch through your referral! That's awesome 🙌\n\nCheck /leaderboard to see the best language learners.",
+},
+"referral_welcome_joined": {
+    "uz": "🎉 LingoMatch'ga xush kelibsiz! Siz do'stingizning taklif havolasi orqali qo'shildingiz 🤝\n\nMana sizning shaxsiy taklif havolangiz — do'stlaringizni ham taklif qiling:\n{link}\n\nEng yaxshi til o'rganuvchilarni ko'rish uchun /leaderboard buyrug'ini yuboring.",
+    "ru": "🎉 Добро пожаловать в LingoMatch! Вы присоединились по приглашению друга 🤝\n\nВот ваша собственная реферальная ссылка — приглашайте своих друзей:\n{link}\n\nПосмотрите лучших изучающих языки через /leaderboard.",
+    "en": "🎉 Welcome to LingoMatch! You joined through a friend's referral 🤝\n\nHere's your own referral link — invite your friends too:\n{link}\n\nCheck /leaderboard to see the best language learners.",
+},
+"referral_someone": {"uz": "Do'stingiz", "ru": "Ваш друг", "en": "A friend"},
 
 
 }

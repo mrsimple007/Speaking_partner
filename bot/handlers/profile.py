@@ -71,6 +71,8 @@ async def start_edit_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     await engine.remove_from_queue(telegram_id)  # add this line
 
+    # Native: 5 common languages + "Other" (expands to the full list) —
+    # same split as onboarding.
     await query.message.reply_text(
         t("ask_native_language", lang),
         reply_markup=keyboards.language_keyboard(lang, "edit_native"),
@@ -85,21 +87,18 @@ async def edit_show_all_native(update, context):
     await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "edit_native", show_all=True))
     return EDIT_NATIVE
 
-async def edit_show_all_learning(update, context):
-    query = update.callback_query
-    await query.answer()
-    lang = context.user_data.get("ui_language", "en")
-    await query.edit_message_reply_markup(reply_markup=keyboards.language_keyboard(lang, "edit_learning", show_all=True))
-    return EDIT_LEARNING
 
 async def edit_native(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
     lang = context.user_data.get("ui_language", "en")
     context.user_data["native_language"] = query.data.split(":")[1]
+
+    # Learning: always show the full LANGUAGE_OPTIONS list right away —
+    # no "Other" button/step needed here, unlike native.
     await query.edit_message_text(
         t("ask_learning_language", lang),
-        reply_markup=keyboards.language_keyboard(lang, "edit_learning"),
+        reply_markup=keyboards.language_keyboard(lang, "edit_learning", show_all=True),
     )
     return EDIT_LEARNING
 
@@ -199,7 +198,6 @@ def build_edit_profile_conversation() -> ConversationHandler:
                 CallbackQueryHandler(edit_native, pattern=r"^edit_native:"),
             ],
             EDIT_LEARNING: [
-                CallbackQueryHandler(edit_show_all_learning, pattern=r"^edit_learning_more$"),
                 CallbackQueryHandler(edit_learning, pattern=r"^edit_learning:"),
             ],
             EDIT_LEVEL: [CallbackQueryHandler(edit_level, pattern=r"^edit_level:")],
