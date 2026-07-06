@@ -92,6 +92,7 @@ def main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(t("menu_find_partner", lang), callback_data="menu:find")],
         [InlineKeyboardButton(t("menu_profile", lang), callback_data="menu:profile")],
+        [InlineKeyboardButton(t("menu_invite", lang), callback_data="menu:invite")],
         [InlineKeyboardButton(t("menu_premium", lang), callback_data="menu:premium")],
         [InlineKeyboardButton(t("menu_settings", lang), callback_data="menu:settings")],
     ]

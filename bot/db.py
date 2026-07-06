@@ -5,6 +5,8 @@ async handlers via run_in_executor where needed, but for MVP scale
 we just call them directly (PostgREST calls are fast enough).
 """
 import asyncio
+import secrets
+import string
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -256,6 +258,95 @@ def activate_premium(telegram_id: int, days: int) -> None:
 
 
 # ---------------------------------------------------------------
+# REFERRALS
+# ---------------------------------------------------------------
+def _generate_referral_code(length: int = 8) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(alphabet) for _ in range(length))
+
+
+def get_user_by_referral_code(code: str) -> Optional[dict]:
+    res = (
+        supabase.table("lingo_users")
+        .select("*")
+        .eq("referral_code", code)
+        .limit(1)
+        .execute()
+    )
+    return res.data[0] if res.data else None
+
+
+def ensure_referral_code(telegram_id: int) -> str:
+    """Returns the user's referral code, generating and persisting one
+    the first time it's needed (existing users won't have one until
+    they first open /invite)."""
+    user = get_user_by_telegram_id(telegram_id)
+    if not user:
+        return ""
+    if user.get("referral_code"):
+        return user["referral_code"]
+
+    for _ in range(5):  # retry on the rare random collision
+        code = _generate_referral_code()
+        if get_user_by_referral_code(code):
+            continue
+        supabase.table("lingo_users").update({"referral_code": code}).eq(
+            "telegram_id", telegram_id
+        ).execute()
+        return code
+    return ""
+
+
+def record_referral(referrer_id: int, referred_id: int) -> bool:
+    """Links a newly-onboarded user to whoever referred them and bumps
+    the referrer's count by one. `referrer_id`/`referred_id` are
+    lingo_users.id values (not telegram ids).
+
+    Returns False (no-op) if:
+      - referrer_id == referred_id (can't refer yourself), or
+      - this referred_id was already recorded before (e.g. handler
+        retried after a network blip) — prevents double counting.
+    """
+    if referrer_id == referred_id:
+        return False
+
+    existing = (
+        supabase.table("lingo_referrals")
+        .select("id")
+        .eq("referred_id", referred_id)
+        .limit(1)
+        .execute()
+    )
+    if existing.data:
+        return False
+
+    supabase.table("lingo_referrals").insert(
+        {"referrer_id": referrer_id, "referred_id": referred_id}
+    ).execute()
+
+    referrer_res = (
+        supabase.table("lingo_users").select("referral_count").eq("id", referrer_id).execute()
+    )
+    current = (referrer_res.data[0]["referral_count"] or 0) if referrer_res.data else 0
+    supabase.table("lingo_users").update({"referral_count": current + 1}).eq(
+        "id", referrer_id
+    ).execute()
+    return True
+
+
+def get_referral_leaderboard(limit: int = 10) -> list:
+    res = (
+        supabase.table("lingo_users")
+        .select("telegram_id, first_name, username, referral_count")
+        .gt("referral_count", 0)
+        .order("referral_count", desc=True)
+        .limit(limit)
+        .execute()
+    )
+    return res.data or []
+
+
+# ---------------------------------------------------------------
 # ADMIN STATS
 # ---------------------------------------------------------------
 def get_admin_stats() -> dict:
@@ -312,3 +403,8 @@ get_pending_payment_for_user_async = _make_async(get_pending_payment_for_user)
 activate_premium_async = _make_async(activate_premium)
 
 get_admin_stats_async = _make_async(get_admin_stats)
+
+get_user_by_referral_code_async = _make_async(get_user_by_referral_code)
+ensure_referral_code_async = _make_async(ensure_referral_code)
+record_referral_async = _make_async(record_referral)
+get_referral_leaderboard_async = _make_async(get_referral_leaderboard)

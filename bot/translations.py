@@ -68,6 +68,11 @@ TRANSLATIONS = {
         "ru": "👤 Мой профиль",
         "en": "👤 My Profile",
     },
+    "menu_invite": {
+        "uz": "🚀 Do'stlarni taklif qilish",
+        "ru": "🚀 Пригласить друзей",
+        "en": "🚀 Invite Friends",
+    },
     "menu_premium": {
         "uz": "⭐ Premium",
         "ru": "⭐ Премиум",
@@ -320,6 +325,43 @@ TRANSLATIONS = {
 
 
 "other_button": {"uz": "🌐 Boshqa", "ru": "🌐 Другой", "en": "🌐 Other"},
+
+
+# ─────────────────────────────────────────────────────────────
+# Referral program
+# ─────────────────────────────────────────────────────────────
+"invite_header": {
+    "uz": "🚀 Do'stlaringizni taklif qiling!\n\nHavolangiz:\n{link}\n\nDo'stingiz shu havola orqali kirib, ro'yxatdan o'tsa, taklifingiz hisoblanadi ✅\n\n👥 Muvaffaqiyatli takliflar: {count}\n🏅 Darajangiz: {badge}\n\nEng ko'p taklif qilganlar ro'yxatini /leaderboard buyrug'i orqali ko'rishingiz mumkin.",
+    "ru": "🚀 Приглашайте друзей!\n\nВаша ссылка:\n{link}\n\nКогда друг перейдёт по ней и завершит регистрацию, приглашение засчитается ✅\n\n👥 Успешные приглашения: {count}\n🏅 Ваш уровень: {badge}\n\nКоманда /leaderboard покажет топ пригласивших.",
+    "en": "🚀 Invite your friends!\n\nYour personal link:\n{link}\n\nWhen a friend joins and completes onboarding through it, your referral count goes up automatically ✅\n\n👥 Successful referrals: {count}\n🏅 Your badge: {badge}\n\nUse /leaderboard to see the top referrers.",
+},
+"badge_none": {
+    "uz": "Hali yo'q — birinchi taklifingizni yuboring! 🌱",
+    "ru": "Пока нет — отправьте первое приглашение! 🌱",
+    "en": "None yet — send your first invite! 🌱",
+},
+"badge_ambassador": {"uz": "📣 Elchi", "ru": "📣 Амбассадор", "en": "📣 Ambassador"},
+"badge_community_builder": {
+    "uz": "🚀 Jamoat quruvchisi",
+    "ru": "🚀 Строитель сообщества",
+    "en": "🚀 Community Builder",
+},
+"badge_global_connector": {
+    "uz": "🌍 Global aloqachi",
+    "ru": "🌍 Глобальный коннектор",
+    "en": "🌍 Global Connector",
+},
+"badge_legend": {"uz": "👑 Afsona", "ru": "👑 Легенда", "en": "👑 Legend"},
+"leaderboard_header": {
+    "uz": "🏆 Eng faol takliflovchilar",
+    "ru": "🏆 Топ пригласивших",
+    "en": "🏆 Top Referrers",
+},
+"leaderboard_empty": {
+    "uz": "🏆 Hozircha reyting bo'sh. Birinchi bo'lib do'stlaringizni taklif qiling!",
+    "ru": "🏆 Рейтинг пока пуст. Станьте первым, кто пригласит друзей!",
+    "en": "🏆 The leaderboard is empty so far. Be the first to invite some friends!",
+},
 
 
 }

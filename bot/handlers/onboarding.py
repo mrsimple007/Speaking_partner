@@ -76,6 +76,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await show_main_menu(update, context, user["ui_language"])
         return ConversationHandler.END
 
+    # Referral deep link: /start ref_<CODE>. Stashed now, resolved and
+    # recorded once onboarding actually completes in finish_interests()
+    # so a bare /start tap alone never counts as a "successful" referral.
+    args = context.args
+    if args and args[0].startswith("ref_"):
+        context.user_data["referral_code"] = args[0][len("ref_"):]
+
     # Brand-new user → show language picker and notify admins
     is_new = user is None
     await update.message.reply_text(
@@ -234,6 +241,26 @@ async def toggle_interest(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     return INTERESTS
 
 
+async def _resolve_referral(context: ContextTypes.DEFAULT_TYPE, new_user: dict) -> None:
+    """Credits whoever's referral link brought this user in, if any.
+    Only called once onboarding fully completes (see finish_interests),
+    so a bare /start tap can never inflate someone's referral count."""
+    code = context.user_data.pop("referral_code", None)
+    if not code:
+        return
+    try:
+        referrer = await db.get_user_by_referral_code_async(code)
+        if referrer:
+            await db.record_referral_async(referrer["id"], new_user["id"])
+            logger.info(
+                "Referral recorded: referrer_id=%s referred_id=%s code=%s",
+                referrer["id"], new_user["id"], code,
+            )
+    except Exception:
+        # Never let a referral hiccup break onboarding for the new user.
+        logger.exception("Failed to resolve/record referral code=%s", code)
+
+
 async def finish_interests(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query       = update.callback_query
     await query.answer()
@@ -252,6 +279,7 @@ async def finish_interests(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         },
     )
     await db.set_user_interests_async(user["id"], list(context.user_data.get("interests_selected", set())))
+    await _resolve_referral(context, user)
 
     logger.info(
         "Onboarding completed: telegram_id=%s native=%s learning=%s level=%s",

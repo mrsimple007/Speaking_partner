@@ -11,7 +11,7 @@ Handler priority (python-telegram-bot processes in registration order):
   6. In-chat controls                 ← chat:end / chat:next / chat:report / report_reason:
   7. Settings handlers                ← settings: / delete: / ui_lang:
   8. Admin commands                   ← /admin
-  9. Convenience commands             ← /menu /profile /premium
+  9. Convenience commands             ← /menu /profile /premium /invite /leaderboard
  10. Message relay                    ← everything else (MessageHandler ALL)
 """
 import logging
@@ -27,6 +27,7 @@ from bot.handlers.profile    import build_edit_profile_conversation
 from bot.handlers.premium    import premium_handlers
 from bot.handlers.settings   import settings_handlers
 from bot.handlers.admin      import admin_handler
+from bot.referral   import referral_handlers
 from telegram.ext import CommandHandler 
 
 
@@ -80,6 +81,8 @@ def main() -> None:
     app.add_handler(CommandHandler("menu",    _show_menu))
     app.add_handler(CommandHandler("profile", _show_profile))
     app.add_handler(CommandHandler("premium", _show_premium))
+    for h in referral_handlers():
+        app.add_handler(h)
 
     # Background job: retry unmatched queue entries every N seconds
     app.job_queue.run_repeating(

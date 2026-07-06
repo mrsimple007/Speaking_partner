@@ -30,21 +30,16 @@ MAX_CONCURRENT = 30
 BATCH_SIZE = 100
 DELAY = 1.0
 
+# Flip to True to attach the banner image; put the file next to this
+# script as referral_banner.jpg (or point REFERRAL_IMAGE_PATH at it).
+WITH_IMAGE = True
+REFERRAL_IMAGE_PATH = "ChatGPT Image 6 июл. 2026 г., 12_20_02.png"
 
 # ─────────────────────────────────────────────
 # DATA FETCHING
 # ─────────────────────────────────────────────
 
 def fetch_users():
-    """Fetch all non-banned users for broadcast.
-
-    lingo_users has no first_name column, so messages are not
-    personalised by name (unlike the presentation bot this was
-    ported from). If you want a name, either add a first_name
-    column and populate it during onboarding, or fetch it live
-    via bot.get_chat(telegram_id) before sending (slower, one
-    extra Telegram API call per user).
-    """
     try:
         response = (
             supabase.table("lingo_users")
@@ -52,20 +47,16 @@ def fetch_users():
             .eq("banned", False)
             .execute()
         )
-        users = []
-        for row in response.data:
-            users.append({
-                "id": row["telegram_id"],
-                "language": row.get("ui_language") or "en"
-            })
-        return users
+        return [
+            {"id": row["telegram_id"], "language": row.get("ui_language") or "en"}
+            for row in response.data
+        ]
     except Exception as e:
         logger.error(f"Error fetching users: {e}")
         return []
 
 
 def fetch_user_by_id(telegram_id: int):
-    """Fetch a single user by telegram_id directly from Supabase."""
     try:
         response = (
             supabase.table("lingo_users")
@@ -76,10 +67,7 @@ def fetch_user_by_id(telegram_id: int):
         )
         if response.data:
             row = response.data[0]
-            return {
-                "id": row["telegram_id"],
-                "language": row.get("ui_language") or "en"
-            }
+            return {"id": row["telegram_id"], "language": row.get("ui_language") or "en"}
         return None
     except Exception as e:
         logger.error(f"Error fetching user {telegram_id}: {e}")
@@ -87,45 +75,53 @@ def fetch_user_by_id(telegram_id: int):
 
 
 # ─────────────────────────────────────────────
-# MESSAGE GENERATION
+# MESSAGE — referral feature announcement
 # ─────────────────────────────────────────────
-# NOTE: placeholder copy — replace with your actual announcement.
-# The quiz-service text from the source bot doesn't apply here, so
-# this is generic "premium features" promo text for LingoMatch.
 
 def generate_message(language):
     if language == "ru":
         return (
-            "🎉 <b>Новости LingoMatch!</b>\n\n"
-            "Теперь доступна <b>Premium подписка</b> — быстрее находите партнёров "
-            "и настраивайте фильтры поиска по полу и интересам!\n\n"
-            "✅ Приоритетный подбор партнёра\n"
-            "✅ Фильтры по полу и интересам\n"
-            "✅ Больше интересов в профиле\n\n"
-            "📩 Подробнее — просто откройте /premium в боте."
+            "🎉 <b>Новая функция — приглашай друзей!</b>\n\n"
+            "📤 /share — получить свою ссылку\n"
+            "🏆 /leaderboard — топ пригласивших\n\n"
+            "Приглашай больше — получай значки 🏅\n"
+            "3 друга → 📣 Амбассадор, 10 → 🚀 Строитель сообщества, "
+            "50 → 🌍 Глобальный коннектор, 100 → 👑 Легенда.\n\n"
+            "А топ приглашающих получает бонус — быстрее находит партнёров ⚡\n\n"
+            "Просто и легко — начни прямо сейчас!"
         )
-
     elif language == "uz":
         return (
-            "🎉 <b>LingoMatch yangiliklari!</b>\n\n"
-            "Endi <b>Premium obuna</b> mavjud — hamkorni tezroq toping va "
-            "jins hamda qiziqishlar bo'yicha filtrlardan foydalaning!\n\n"
-            "✅ Ustuvor hamkor tanlash\n"
-            "✅ Jins va qiziqishlar bo'yicha filtrlar\n"
-            "✅ Profilda ko'proq qiziqishlar\n\n"
-            "📩 Batafsil — botda /premium buyrug'ini yuboring."
+            "🎉 <b>Botimizda Yangi funksiya — do'stlaringizni taklif qiling!</b>\n\n"
+            "📤 /share orqali havolangizni oling\n"
+            "🏆 /leaderboard — eng ko'p do'st taklif qilganlar ro'yxati\n\n"
+            "Ko'proq taklif qiling va medallar oling 🏅\n"
+            "3 ta do'st → 📣 Ambassador, 10 ta → 🚀 Community Builder, "
+            "50 ta → 🌍 Global Connector, 100 ta → 👑 Legend.\n\n"
+            "Eng faol taklif qiluvchilar juda ko'plab imkoniyatga ega bo'lishadi! ⚡\n\n"
+            "/share qilib hoziroq boshlang!"
         )
-
-    # default: en
     return (
-        "🎉 <b>News from LingoMatch!</b>\n\n"
-        "<b>Premium</b> is now available — find partners faster and set "
-        "filters by gender and interests!\n\n"
-        "✅ Priority matching\n"
-        "✅ Gender & interest filters\n"
-        "✅ More interests on your profile\n\n"
-        "📩 Learn more — just send /premium in the bot."
+        "🎉 <b>New feature — invite friends!</b>\n\n"
+        "📤 /share — get your invite link\n"
+        "🏆 /leaderboard — see the top referrers\n\n"
+        "Invite more, earn badges 🏅\n"
+        "3 friends → 📣 Ambassador, 10 → 🚀 Community Builder, "
+        "50 → 🌍 Global Connector, 100 → 👑 Legend.\n\n"
+        "Top referrers also get matched with partners faster ⚡\n\n"
+        "Easy and simple — start now!"
     )
+
+# ─────────────────────────────────────────────
+# IMAGE LOADING
+# ─────────────────────────────────────────────
+
+def load_image_bytes(path: str = REFERRAL_IMAGE_PATH):
+    if not path or not os.path.isfile(path):
+        logger.error(f"Image file not found: {path}")
+        return None
+    with open(path, "rb") as f:
+        return f.read()
 
 
 # ─────────────────────────────────────────────
@@ -140,28 +136,49 @@ async def send_message_safe(session, bot_token, chat_id, message):
         'parse_mode': 'HTML',
         'disable_web_page_preview': True
     }
-
     try:
         async with session.post(url, json=payload) as response:
             if response.status == 200:
                 return {"success": True, "chat_id": chat_id}
-            else:
-                error_text = await response.text()
-                return {"success": False, "chat_id": chat_id, "error": error_text}
+            error_text = await response.text()
+            return {"success": False, "chat_id": chat_id, "error": error_text}
     except Exception as e:
         return {"success": False, "chat_id": chat_id, "error": str(e)}
 
 
-async def send_batch_users(batch: list, bot_token: str) -> list:
-    """Send localized messages to a batch of users."""
+async def send_photo_safe(session, bot_token, chat_id, photo_bytes, caption=None):
+    url = f"https://api.telegram.org/bot{bot_token}/sendPhoto"
+    form = aiohttp.FormData()
+    form.add_field("chat_id", str(chat_id))
+    form.add_field("photo", photo_bytes, filename="announcement.jpg", content_type="image/jpeg")
+    if caption:
+        form.add_field("caption", caption)
+        form.add_field("parse_mode", "HTML")
+    try:
+        async with session.post(url, data=form) as response:
+            if response.status == 200:
+                return {"success": True, "chat_id": chat_id}
+            error_text = await response.text()
+            return {"success": False, "chat_id": chat_id, "error": error_text}
+    except Exception as e:
+        return {"success": False, "chat_id": chat_id, "error": str(e)}
+
+
+async def send_to_user(session, bot_token, user, photo_bytes):
+    """Sends the announcement to one user — as a photo+caption if we
+    have image bytes (the message is short enough to fit Telegram's
+    1024-char caption limit), otherwise as plain text."""
+    message = generate_message(user["language"])
+    if photo_bytes:
+        return await send_photo_safe(session, bot_token, user["id"], photo_bytes, caption=message)
+    return await send_message_safe(session, bot_token, user["id"], message)
+
+
+async def send_batch_users(batch: list, bot_token: str, photo_bytes) -> list:
     connector = aiohttp.TCPConnector(limit=MAX_CONCURRENT)
     timeout = aiohttp.ClientTimeout(total=30)
-
     async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-        tasks = [
-            send_message_safe(session, bot_token, user["id"], generate_message(user["language"]))
-            for user in batch
-        ]
+        tasks = [send_to_user(session, bot_token, user, photo_bytes) for user in batch]
         return await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -177,11 +194,11 @@ def format_duration(seconds: float) -> str:
     return f"{minutes}m {secs:.1f}s"
 
 
-def print_summary(label: str, successful: int, failed: int, elapsed: float):
+def print_summary(successful: int, failed: int, elapsed: float):
     total = successful + failed
     rate = (successful / total * 100) if total > 0 else 0.0
     print("\n" + "=" * 50)
-    print(f"BROADCAST COMPLETED — {label}")
+    print("BROADCAST COMPLETED")
     print("=" * 50)
     print(f"✅ Successfully sent : {successful}")
     print(f"❌ Failed            : {failed}")
@@ -191,12 +208,16 @@ def print_summary(label: str, successful: int, failed: int, elapsed: float):
 
 
 async def send_to_all_users():
+    photo_bytes = load_image_bytes() if WITH_IMAGE else None
+    if WITH_IMAGE and photo_bytes is None:
+        print(f"⚠️  Couldn't load image at '{REFERRAL_IMAGE_PATH}' — sending text only.")
+
     users = fetch_users()
     if not users:
         print("No users found.")
         return
 
-    print(f"Sending to {len(users)} users...")
+    print(f"Sending to {len(users)} users{' (with image)' if photo_bytes else ''}...")
     start_time = time.time()
     successful = failed = 0
     total_batches = (len(users) + BATCH_SIZE - 1) // BATCH_SIZE
@@ -205,9 +226,8 @@ async def send_to_all_users():
         batch = users[i:i + BATCH_SIZE]
         batch_num = (i // BATCH_SIZE) + 1
         print(f"Batch {batch_num}/{total_batches} ({len(batch)} users)...")
-
         try:
-            results = await send_batch_users(batch, BOT_TOKEN)
+            results = await send_batch_users(batch, BOT_TOKEN, photo_bytes)
             for result in results:
                 if isinstance(result, Exception) or not result.get("success"):
                     failed += 1
@@ -220,7 +240,7 @@ async def send_to_all_users():
         if i + BATCH_SIZE < len(users):
             await asyncio.sleep(DELAY)
 
-    print_summary("USERS", successful, failed, time.time() - start_time)
+    print_summary(successful, failed, time.time() - start_time)
 
 
 # ─────────────────────────────────────────────
@@ -228,20 +248,21 @@ async def send_to_all_users():
 # ─────────────────────────────────────────────
 
 async def send_test_message(telegram_id: int, language: str = "en"):
-    """Send a test message to a single user."""
     user = fetch_user_by_id(telegram_id)
     lang = user["language"] if user else language
-
     message = generate_message(lang)
     bot = Bot(token=BOT_TOKEN)
 
     try:
-        await bot.send_message(
-            chat_id=telegram_id,
-            text=message,
-            parse_mode="HTML",
-            disable_web_page_preview=True,
-        )
+        if WITH_IMAGE:
+            photo_bytes = load_image_bytes()
+            if photo_bytes:
+                await bot.send_photo(chat_id=telegram_id, photo=photo_bytes, caption=message, parse_mode="HTML")
+                print(f"✅ Test message sent to {telegram_id} (lang={lang}, with image)")
+                return
+            print(f"⚠️  Couldn't load image at '{REFERRAL_IMAGE_PATH}' — sending text only.")
+
+        await bot.send_message(chat_id=telegram_id, text=message, parse_mode="HTML", disable_web_page_preview=True)
         print(f"✅ Test message sent to {telegram_id} (lang={lang})")
     except TelegramError as e:
         logger.error(f"Failed to send test message to {telegram_id}: {e}")
@@ -255,11 +276,12 @@ async def main():
     users = fetch_users()
 
     print("=" * 50)
-    print("LINGOMATCH BROADCAST")
+    print("LINGOMATCH BROADCAST — Referral Feature Announcement")
+    print(f"WITH_IMAGE = {WITH_IMAGE}")
     print("=" * 50)
     print(f"Total users  : {len(users)}")
     print("\nWhat would you like to do?")
-    print("  1. Send messages to all users")
+    print("  1. Send to all users")
     print("  2. Send test message to a specific user")
     print("  3. Send test message to admin")
     print("  4. Exit")

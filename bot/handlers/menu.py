@@ -46,6 +46,10 @@ async def menu_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         from bot.handlers.profile import show_profile
 
         await show_profile(update, context)
+    elif action == "invite":
+        from bot.referral import show_invite
+
+        await show_invite(update, context)
     elif action == "premium":
         from bot.handlers.premium import show_premium
 

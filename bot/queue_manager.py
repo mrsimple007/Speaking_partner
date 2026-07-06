@@ -26,6 +26,7 @@ class QueueEntry:
     premium: bool
     filter_gender: Optional[str] = None   # premium-only filter
     filter_interests: set = field(default_factory=set)  # premium-only filter
+    referral_tier: int = 0   # from bot.referrals.get_priority_tier(); reward for top referrers
     joined_at: float = field(default_factory=time)
 
 
@@ -78,7 +79,7 @@ class MatchingEngine:
                 and passes_filters(entry, c)
             ]
             if exact_matches:
-                exact_matches.sort(key=lambda c: (not c.premium, c.joined_at))
+                exact_matches.sort(key=lambda c: (not c.premium, -c.referral_tier, c.joined_at))
                 return exact_matches[0]
 
             # Priority 2: same learning language (language exchange peers)
@@ -95,9 +96,14 @@ class MatchingEngine:
                 def level_idx(level: str) -> int:
                     return order.index(level) if level in order else len(order) // 2
 
-                # Premium candidates preferred first, then closest level
+                # Premium candidates preferred first, then top referrers,
+                # then closest level
                 same_learning.sort(
-                    key=lambda c: (not c.premium, abs(level_idx(c.level) - level_idx(entry.level)))
+                    key=lambda c: (
+                        not c.premium,
+                        -c.referral_tier,
+                        abs(level_idx(c.level) - level_idx(entry.level)),
+                    )
                 )
                 return same_learning[0]
 

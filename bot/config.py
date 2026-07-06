@@ -35,3 +35,12 @@ WAITING_QUEUE_POLL_SECONDS = 2
 ADMIN_IDS = [
     int(x) for x in os.getenv("ADMIN_IDS", "").split(",") if x.strip()
 ]
+
+
+REFERRAL_BADGES = [
+    (100, "👑", "badge_legend"),
+    (50, "🌍", "badge_global_connector"),
+    (10, "🚀", "badge_community_builder"),
+    (3, "📣", "badge_ambassador"),
+]
+ 
