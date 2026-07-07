@@ -59,6 +59,10 @@ async def show_invite(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     lang = user.get("ui_language", "en")
 
+    from bot.handlers.subscribe import ensure_subscribed
+    if not await ensure_subscribed(update, context, lang):
+        return
+
     code = await db.ensure_referral_code_async(telegram_id)
     me = await context.bot.get_me()
     link = _invite_link(me.username, code)
@@ -145,6 +149,10 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     telegram_id = update.effective_user.id
     user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en") if user else "en"
+
+    from bot.handlers.subscribe import ensure_subscribed
+    if not await ensure_subscribed(update, context, lang):
+        return
 
     # Build the user's own share button up front — shown whether the
     # board is empty or full, since the point of /leaderboard is to

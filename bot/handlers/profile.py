@@ -66,6 +66,11 @@ async def start_edit_profile(update: Update, context: ContextTypes.DEFAULT_TYPE)
     telegram_id = update.effective_user.id
     user = db.get_user_by_telegram_id(telegram_id)
     lang = user.get("ui_language", "en")
+
+    from bot.handlers.subscribe import ensure_subscribed
+    if not await ensure_subscribed(update, context, lang):
+        return ConversationHandler.END
+
     context.user_data["ui_language"] = lang
     context.user_data["interests_selected"] = set(db.get_user_interests(user["id"]))
 

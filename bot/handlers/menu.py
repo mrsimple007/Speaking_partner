@@ -38,6 +38,10 @@ async def menu_router(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
     lang = user.get("ui_language", "en")
 
+    from bot.handlers.subscribe import ensure_subscribed
+    if not await ensure_subscribed(update, context, lang):
+        return
+
     if action == "find":
         from bot.handlers.matching import find_partner_entry
 

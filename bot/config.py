@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
-# BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN_SIMPLELEARNINGUZ", "")
+# BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN_SIMPLELEARNINGUZ", "")
 
 
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
@@ -44,3 +44,14 @@ REFERRAL_BADGES = [
     (3, "📣", "badge_ambassador"),
 ]
  
+
+
+FORCE_SUBSCRIPTION_ENABLED = "false"
+ 
+REQUIRED_CHANNELS = [
+    {
+        "id": "@lingomatch",          # replace with your real channel username/id
+        "name": "LingoMatch Announcements",
+        "url": "https://t.me/lingomatch",
+    },
+]

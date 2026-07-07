@@ -399,6 +399,32 @@ TRANSLATIONS = {
 },
 "referral_someone": {"uz": "Do'stingiz", "ru": "Ваш друг", "en": "A friend"},
 
+"subscription_required": {
+    "uz": "🌟 <b>Davom etishdan oldin...</b>\n\nBotdan foydalanish uchun quyidagi kanal(lar)ga obuna bo'ling 👇\n\nObuna bo'lgach, \"✅ Tekshirish\" tugmasini bosing.",
+    "ru": "🌟 <b>Прежде чем продолжить...</b>\n\nЧтобы пользоваться ботом, подпишитесь на канал(ы) ниже 👇\n\nПосле подписки нажмите «✅ Проверить».",
+    "en": "🌟 <b>Before you continue...</b>\n\nPlease subscribe to the channel(s) below to use the bot 👇\n\nOnce you've joined, tap \"✅ Check\".",
+},
+"subscription_check_button": {
+    "uz": "✅ Tekshirish",
+    "ru": "✅ Проверить",
+    "en": "✅ Check Subscription",
+},
+"subscription_checking": {
+    "uz": "🔍 Tekshirilmoqda...",
+    "ru": "🔍 Проверяем...",
+    "en": "🔍 Checking...",
+},
+"subscription_still_required": {
+    "uz": "❌ <b>Deyarli tayyor!</b>\n\nSiz hali barcha kerakli kanallarga obuna bo'lmadingiz.\n\n🔁 Iltimos, barchasiga obuna bo'lib, qayta tekshiring.",
+    "ru": "❌ <b>Почти готово!</b>\n\nВы подписались не на все обязательные каналы.\n\n🔁 Пожалуйста, подпишитесь на все каналы и попробуйте снова.",
+    "en": "❌ <b>Almost there!</b>\n\nYou haven't subscribed to all the required channels yet.\n\n🔁 Please subscribe to all of them and check again.",
+},
+"subscription_success": {
+    "uz": "🎉 <b>Ajoyib!</b> Endi botdan bemalol foydalanishingiz mumkin ✅",
+    "ru": "🎉 <b>Отлично!</b> Теперь вы можете свободно пользоваться ботом ✅",
+    "en": "🎉 <b>Perfect!</b> You're all set to use the bot now ✅",
+},
+
 
 }
 

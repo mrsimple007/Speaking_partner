@@ -2,6 +2,7 @@
 LingoMatch Bot — entrypoint.
 
 Handler priority (python-telegram-bot processes in registration order):
+  0. Subscription check button        ← check_subscription (always reachable, any state)
   1. Onboarding ConversationHandler   ← catches /start + onboarding callbacks
   2. Edit-profile ConversationHandler ← catches profile-edit callbacks
   3. Premium handlers                 ← plan selection, card/stars, admin approve/decline,
@@ -11,7 +12,7 @@ Handler priority (python-telegram-bot processes in registration order):
   6. In-chat controls                 ← chat:end / chat:next / chat:report / report_reason:
   7. Settings handlers                ← settings: / delete: / ui_lang:
   8. Admin commands                   ← /admin
-  9. Convenience commands             ← /menu /profile /premium /invite /leaderboard
+  9. Convenience commands             ← /menu /profile /premium /invite /share /leaderboard
  10. Message relay                    ← everything else (MessageHandler ALL)
 """
 import logging
@@ -28,6 +29,7 @@ from bot.handlers.premium    import premium_handlers
 from bot.handlers.settings   import settings_handlers
 from bot.handlers.admin      import admin_handler
 from bot.referral   import referral_handlers
+from bot.handlers.subscribe        import subscription_handlers
 from telegram.ext import CommandHandler 
 
 
@@ -48,6 +50,12 @@ def main() -> None:
     # 0. Priority relay guard — must win over any other catch-all
     #    MessageHandler whenever the sender is mid-chat.
     app.add_handler(priority_relay_handler(), group=-1)
+
+    # 0b. Subscription "✅ Check" button — registered before any
+    #     ConversationHandler so it's always reachable no matter what
+    #     state a user's conversation (onboarding, edit-profile) is in.
+    for h in subscription_handlers():
+        app.add_handler(h)
 
     # 1. Onboarding
     app.add_handler(build_onboarding_conversation())
@@ -99,16 +107,32 @@ async def _show_menu(update, context):
     from bot import db
     user = db.get_user_by_telegram_id(update.effective_user.id)
     if user:
+        lang = user.get("ui_language", "en")
+        from bot.handlers.subscribe import ensure_subscribed
+        if not await ensure_subscribed(update, context, lang):
+            return
         from bot.handlers.menu import show_main_menu
-        await show_main_menu(update, context, user.get("ui_language", "en"))
+        await show_main_menu(update, context, lang)
 
 
 async def _show_profile(update, context):
+    from bot import db
+    user = db.get_user_by_telegram_id(update.effective_user.id)
+    lang = user.get("ui_language", "en") if user else "en"
+    from bot.handlers.subscribe import ensure_subscribed
+    if not await ensure_subscribed(update, context, lang):
+        return
     from bot.handlers.profile import show_profile
     await show_profile(update, context)
 
 
 async def _show_premium(update, context):
+    from bot import db
+    user = db.get_user_by_telegram_id(update.effective_user.id)
+    lang = user.get("ui_language", "en") if user else "en"
+    from bot.handlers.subscribe import ensure_subscribed
+    if not await ensure_subscribed(update, context, lang):
+        return
     from bot.handlers.premium import show_premium
     await show_premium(update, context)
 
