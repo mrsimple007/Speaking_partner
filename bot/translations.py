@@ -353,7 +353,7 @@ TRANSLATIONS = {
 },
 "badge_legend": {"uz": "👑 Afsona", "ru": "👑 Легенда", "en": "👑 Legend"},
 "leaderboard_header": {
-    "uz": "🏆 Eng faol til o'rganuvchilar",
+    "uz": "🏆 Eng faol takliflovchilar",
     "ru": "🏆 Топ пригласивших",
     "en": "🏆 Top Referrers",
 },
@@ -361,6 +361,16 @@ TRANSLATIONS = {
     "uz": "🏆 Hozircha reyting bo'sh. Birinchi bo'lib do'stlaringizni taklif qiling!",
     "ru": "🏆 Рейтинг пока пуст. Станьте первым, кто пригласит друзей!",
     "en": "🏆 The leaderboard is empty so far. Be the first to invite some friends!",
+},
+"leaderboard_your_stats": {
+    "uz": "👤 Sizning natijangiz: {count} ta taklif — {badge}",
+    "ru": "👤 Ваш результат: {count} приглашений — {badge}",
+    "en": "👤 Your stats: {count} referrals — {badge}",
+},
+"leaderboard_cta": {
+    "uz": "Ro'yxatga chiqish yoki undan yuqoriga ko'tarilish uchun /share buyrug'i orqali shaxsiy havolangizni oling va do'stlaringizga yuboring — quyidagi tugma bilan bir bosishda! 🚀",
+    "ru": "Чтобы попасть в рейтинг или подняться выше, отправьте /share, чтобы получить свою ссылку, и поделитесь ею с друзьями — можно прямо кнопкой ниже 🚀",
+    "en": "To get on the board (or climb it), grab your link with /share and send it to friends — one tap with the button below 🚀",
 },
 "share_with_friends_button": {
     "uz": "📤 Do'stlarga yuborish",

@@ -146,9 +146,21 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     user = await db.get_user_by_telegram_id_async(telegram_id)
     lang = user.get("ui_language", "en") if user else "en"
 
+    # Build the user's own share button up front — shown whether the
+    # board is empty or full, since the point of /leaderboard is to
+    # nudge them toward climbing it, not just display a scoreboard.
+    keyboard = None
+    if user:
+        me = await context.bot.get_me()
+        code = await db.ensure_referral_code_async(telegram_id)
+        link = _invite_link(me.username, code)
+        share_text = _invite_text(lang, link, user.get("referral_count", 0) or 0)
+        keyboard = keyboards.share_referral_keyboard(lang, _share_url(link, share_text))
+
     top = await db.get_referral_leaderboard_async(limit=10)
     if not top:
-        await update.message.reply_text(t("leaderboard_empty", lang))
+        text = t("leaderboard_empty", lang) + "\n\n" + t("leaderboard_cta", lang)
+        await update.message.reply_text(text, reply_markup=keyboard)
         return
 
     medals = ["🥇", "🥈", "🥉"]
@@ -161,7 +173,18 @@ async def leaderboard_command(update: Update, context: ContextTypes.DEFAULT_TYPE
         emoji = badge[0] if badge else ""
         lines.append(f"{rank} {name} — {count} {emoji}")
 
-    await update.message.reply_text("\n".join(lines))
+    # Personal status, so the leaderboard tells the reader where *they*
+    # stand, not just who's already winning.
+    if user:
+        my_count = user.get("referral_count", 0) or 0
+        lines.append("")
+        lines.append(t("leaderboard_your_stats", lang, count=my_count, badge=_badge_line(lang, my_count)))
+
+    # Explicit call to action — how to get on (or climb) the board.
+    lines.append("")
+    lines.append(t("leaderboard_cta", lang))
+
+    await update.message.reply_text("\n".join(lines), reply_markup=keyboard)
 
 
 def referral_handlers() -> list:
