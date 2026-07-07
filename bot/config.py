@@ -50,8 +50,40 @@ FORCE_SUBSCRIPTION_ENABLED = "false"
  
 REQUIRED_CHANNELS = [
     {
-        "id": "@lingomatch",          # replace with your real channel username/id
+        "id": "@lingomatch",          
         "name": "LingoMatch Announcements",
         "url": "https://t.me/lingomatch",
     },
+        # {
+    #     'id': '@SimpleLearnUz',  
+    #     'name': 'Simple Learn AI',
+    #     'url': 'https://t.me/SimpleLearnUz'
+    # },
+    # {
+    #     'id': '@uzbek_europe',  
+    #     'name': 'Yevropalik o\'zbek',
+    #     'url': 'https://t.me/uzbek_europe'
+    # },
+    # {
+    #     'id': '@Muslimbek_01',
+    #     'name': 'Simple Quizzer | Official',
+    #     'url': 'https://t.me/muslimbek_01'
+    # },
+
+        # {
+        #     'id': '@talabaga_tezkor_yordam',  
+        #     'name': 'Talabalarga sifatli yordam',
+        #     'url': 'https://t.me/talabaga_tezkor_yordam'
+        # },
+
+    # {
+    #     'id': '@Ai_zonez',
+    #     'name': 'AI yangiliklari',
+    #     'url': 'https://t.me/ai_zonez'
+    # },
+    # {
+    #     'id': '@Intellektualyoshlar',
+    #     'name': 'Simple Quizzer | Official',
+    #     'url': 'https://t.me/intellektualyoshlar'
+    # },
 ]
